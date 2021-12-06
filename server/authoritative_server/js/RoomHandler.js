@@ -64,7 +64,7 @@ io.on("connection", socket => {
         var game = games[roomID];
         if (!game) {
             console.log('Lobby' + roomID +' does not exist!');
-            socket.emit('joinFailed',roomID,'not-a-room');
+            socket.emit('joinLobbyFailed',roomID,'not-a-room');
             return;
         }
 

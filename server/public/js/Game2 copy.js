@@ -1,7 +1,7 @@
-
+// OLD BACKUP ------ IGNORE
 class Game2 extends Phaser.Scene {
     constructor() {
-        super("playGame");
+        super("playGameOLD");
     }
 
     
