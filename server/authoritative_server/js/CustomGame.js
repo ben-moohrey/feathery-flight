@@ -14,7 +14,7 @@ const config = {
     default: 'arcade',
     arcade: {
       debug: false,
-      gravity: { y: 10 }
+      gravity: { y: 300 }
     }
   },
   scene: {
@@ -30,7 +30,7 @@ class CustomGame extends Phaser.Game {
     super(config);
     this.roomID = roomID;
     this.hostSocket = hostSocket;
-
+    this.players = {}
     this.leaderboard = [];
     //this.leaderboard = [];
 
@@ -40,6 +40,7 @@ class CustomGame extends Phaser.Game {
     var self = this;
     if (!self.initialized) {return;}
     var currScene = this.scene.scenes[0];
+    if (currScene.players[socket.id]) { return; }
     console.log("User: "+ socket.id +" joined lobby: "+self.roomID);
     currScene.leaderboard.push([socket.id,0]); // Leaderboard sorted by join order
     currScene.players[socket.id] = {
@@ -48,19 +49,21 @@ class CustomGame extends Phaser.Game {
       y: self.canvas.height/2,
       playerID: socket.id,
       nickname: socket.nickname,
-      jump: false
+      input: {
+        jump: false
+      }
     }
 
     self.addPhysicsPlayer(self, currScene.players[socket.id]);
 
     console.log('-Current players-')
     console.log(currScene.players)
-    return socket
   }
 
   removePlayer(playerId) {
+    var self = this;
     if(!self.initialized) return; 
-    var currScene = this.scene.scenes[0];
+    const currScene = this.scene.scenes[0];
     currScene.physicsPlayers.getChildren().forEach((player) => {
       if (playerId === player.playerId) {
         player.destroy();
@@ -68,6 +71,9 @@ class CustomGame extends Phaser.Game {
     });
     
     delete currScene.players[playerId];
+    console.log('curr scene players')
+    console.log(currScene.players[playerId])
+    console.log('end')
 
 
     for(var i = 0; i < currScene.leaderboard.length; i++) {
@@ -102,6 +108,12 @@ class CustomGame extends Phaser.Game {
     currScene.physicsPlayers.add(player);
   }
 
+  // Emits player updates to room
+  // emitPlayerUpdates(io) {
+  //   if(!self.initialized) return;
+  //   io.to(this.roomID).emit('playerUpdates', players);
+  // }
+
   
 
 }
@@ -113,17 +125,16 @@ function preload() {
 }
 function create() {
   const self = this;
-
   console.log('new game lobby being created')
   console.log(self)
-  this.hostSocket = this.game.hostSocket;
 
+  this.hostSocket = this.game.hostSocket;
   this.roomID = this.game.roomID; // Take room ID from passed in value
 
   // three objects holding player data
   this.physicsPlayers = this.physics.add.group();
   this.leaderboard = this.game.leaderboard;
-  this.players = {};
+  this.players = this.game.players;
 
 
   // Create tubes
@@ -140,20 +151,37 @@ function create() {
   this.game.initialized = true;
   console.log('Lobby '+ this.roomID+ ' initialized!');
   this.hostSocket.emit('lobbyInitialized', this.roomID);
-
-
-
 }
 
 function update() {
   const self = this;
-  this.physicsPlayers.getChildren().forEach((player)=> {
-    const input = self.players[player.playerId.jump];
-    if(input.jump) {
-      player.set
-    }
-  });
-  const input = this.
+  // if (!this.initialized) return;
+  // if (this.test === true) {
+  //   console.log("single and ready to mingle")
+  //   console.log(self)
+  //   this.test = false;
+  //   return
+  // }
+  if (this.initialized) {
+    this.physicsPlayers.getChildren().forEach( (player)=> {
+      console.log('check')
+      const input = self.players[player.playerID].input;
+      player.setVelocityX(100); // update players x velocity
+      if(input.jump) {
+        player.setVelocityY(120);
+      }
+      else {
+        player.setAcceleration(0);
+      }
+  
+      self.players[player.playerID].x = player.x;
+      self.players[player.playerID].y = player.y;
+      self.players[player.playerID].rotation = player.rotation;
+    });
+    this.physics.world.wrap(this.players, 5);
+    io.to(this.roomID).emit('playerUpdates', players);
+  }
+
 }
 
 

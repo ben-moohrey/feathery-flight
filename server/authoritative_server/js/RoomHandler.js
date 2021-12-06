@@ -16,10 +16,11 @@ io.on("connection", socket => {
         if (game) {
             game.removePlayer(socket.id);
 
+            io.to(clientRooms[socket.id]).emit('updateLeaderBoard', game.scene.scenes[0].leaderboard);
             io.to(clientRooms[socket.id]).emit('removePlayer',socket.id);
-
-    
+            
             console.log(game.scene.scenes[0].players);
+            console.log(game.players);
             // Check if room is empty and if it is begin timer to delete
             if (!io.sockets.adapter.rooms.get(clientRooms[socket.id])) {
                 console.log('Lobby '+ clientRooms[socket.id] + ' empty... beginning shutdowm timer');
@@ -43,7 +44,7 @@ io.on("connection", socket => {
         console.log("Handling new game");
         let roomID = makeid(6); // IMPORTANT: need to check if already a client room name
         
-        clientRooms[socket.id] = roomID;
+        // clientRooms[socket.id] = roomID;
         games[roomID] = new CustomGame(config,roomID,socket); // Spawn a new headless phaser instance
         // console.log(games);
 
@@ -58,6 +59,7 @@ io.on("connection", socket => {
   
 
     function handleJoinGame(roomID) {
+        console.log('bruh');
         console.log(socket.id+' attemping to join lobby: '+roomID);
         var game = games[roomID];
         if (!game) {
@@ -65,6 +67,7 @@ io.on("connection", socket => {
             socket.emit('joinFailed',roomID,'not-a-room');
             return;
         }
+
         // TODO: check for bad username
         clientRooms[socket.id] = roomID;
         socket.join(roomID);
@@ -77,11 +80,14 @@ io.on("connection", socket => {
             socket.emit('joinFailed',roomID,'room-full');
             return;
         }
-        
+
+
+        // emit join success
         socket.emit('joinSuccess',roomID);
-        socket = game.addPlayer(socket);
+
+        game.addPlayer(socket);
      
-        
+        // Send updated leaderboard to room
         io.to(roomID).emit('updateLeaderBoard', game.scene.scenes[0].leaderboard); // game.scene.scene[0].players
 
         // Send the players object to the player
