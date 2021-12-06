@@ -21,9 +21,16 @@ class JoinLobby extends Phaser.Scene {
         
         this.socket.emit('joinGame',this.lobbyID);
 
-        this.socket.on('updateLeaderBoard', (players) => {
-
+        this.socket.on('updateLeaderBoard', (leaderboard) => {
+            console.log(leaderboard)
         });
+        this.socket.on('updateLeaderBoard', (leaderboard) => {
+            console.log('BRUH')
+            console.log(leaderboard)
+            console.log('BRUH')
+        });
+
+
 
         // this.socket.on('joinSuccess', ()=> {
         //     var mainMenuDialog = CreateLobbyDialog(this, {

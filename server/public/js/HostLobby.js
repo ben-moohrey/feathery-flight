@@ -13,10 +13,13 @@ class CreateLobby extends Phaser.Scene {
     create() {
 
         // TODO: Setup lobby scoreboard
+
+        // Connect to server
         var self = this; 
         this.socket = io();
         console.log("Connected to Server");
 
+        // Get nickname from mainMenu scene
         this.nickname = this.scene.get('mainMenu').nickname;
         this.socket.nickname = this.nickname;
 
@@ -28,6 +31,7 @@ class CreateLobby extends Phaser.Scene {
             this.socket.emit('joinGame',this.roomID);
         })
 
+        // Join lobby failed
         this.socket.on('joinLobbyFailed', (failCode)=> {
             if (failCode==='room-full') {
                 // TODO: Handle full room
@@ -37,10 +41,18 @@ class CreateLobby extends Phaser.Scene {
             }
         })
 
-        
-
-
         this.players = this.add.group();
+
+        this.socket.on('updateLeaderBoard', (leaderboard) => {
+            console.log('hey')
+            console.log(leaderboard)
+            console.log('hey')
+        });
+        this.socket.on('updateLeaderBoard', (leaderboard) => {
+            console.log('BRUH')
+            console.log(leaderboard)
+            console.log('BRUH')
+        });
 
         this.socket.on('currentPlayers', function (players) {
             console.log('receiving current players');

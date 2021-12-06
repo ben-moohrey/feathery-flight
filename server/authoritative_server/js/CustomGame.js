@@ -1,10 +1,4 @@
 
-function makeGameTest() {
-  console.log("Making Game Test");
-  return {
-    player: "jimmy"
-  }
-}
 const config = {
   type: Phaser.HEADLESS,
   parent: 'phaser-example',
@@ -32,17 +26,16 @@ class CustomGame extends Phaser.Game {
     this.hostSocket = hostSocket;
     this.players = {}
     this.leaderboard = [];
-    //this.leaderboard = [];
-
   }
 
+  // All function below refer to self as game object (Phaser advises against lols)
   addPlayer(socket) {
     var self = this;
     if (!self.initialized) {return;}
     var currScene = this.scene.scenes[0];
     if (currScene.players[socket.id]) { return; }
     console.log("User: "+ socket.id +" joined lobby: "+self.roomID);
-    currScene.leaderboard.push([socket.id,0]); // Leaderboard sorted by join order
+    currScene.leaderboard.push([socket.id,socket.nickname, 0]); // Leaderboard sorted by join order
     currScene.players[socket.id] = {
       rotation: 0,
       x: self.canvas.width/2,
@@ -71,10 +64,6 @@ class CustomGame extends Phaser.Game {
     });
     
     delete currScene.players[playerId];
-    console.log('curr scene players')
-    console.log(currScene.players[playerId])
-    console.log('end')
-
 
     for(var i = 0; i < currScene.leaderboard.length; i++) {
       if (currScene.leaderboard[i][0] === playerId) {
@@ -108,14 +97,6 @@ class CustomGame extends Phaser.Game {
     currScene.physicsPlayers.add(player);
   }
 
-  // Emits player updates to room
-  // emitPlayerUpdates(io) {
-  //   if(!self.initialized) return;
-  //   io.to(this.roomID).emit('playerUpdates', players);
-  // }
-
-  
-
 }
 
 function preload() {
@@ -125,28 +106,25 @@ function preload() {
 }
 function create() {
   const self = this;
-  console.log('new game lobby being created')
-  console.log(self)
+  var started = false;
+  console.log('New game lobby being created')
 
+  // Pass in (game) variable to the (Scene) instance
   this.hostSocket = this.game.hostSocket;
   this.roomID = this.game.roomID; // Take room ID from passed in value
 
-  // three objects holding player data
+  // Three objects holding player data
   this.physicsPlayers = this.physics.add.group();
   this.leaderboard = this.game.leaderboard;
   this.players = this.game.players;
 
-
-  // Create tubes
-
+  // TODO: Create tubes
   this.physics.add.collider(this.physicsPlayers);
 
   // Add tube hitbox
   // this.physics.add.overlap(this.physicsPlayers,,function(star,player)=>{
 
   // });
-
-
 
   this.game.initialized = true;
   console.log('Lobby '+ this.roomID+ ' initialized!');
@@ -155,18 +133,12 @@ function create() {
 
 function update() {
   const self = this;
-  // if (!this.initialized) return;
-  // if (this.test === true) {
-  //   console.log("single and ready to mingle")
-  //   console.log(self)
-  //   this.test = false;
-  //   return
-  // }
+
+  // Make sure game is initialized
   if (this.initialized) {
     this.physicsPlayers.getChildren().forEach( (player)=> {
-      console.log('check')
       const input = self.players[player.playerID].input;
-      player.setVelocityX(100); // update players x velocity
+      player.setVelocityX(100); // Update players x velocity
       if(input.jump) {
         player.setVelocityY(120);
       }

@@ -1,9 +1,10 @@
 // store key=socket.id, value = roomID
 const clientRooms = {}
 
-// store phaser instances
-const games = {}
-const ROOM_CAPACITY = 20;
+
+const games = {} // Store phaser game instances
+const ROOM_CAPACITY = 20; // Max users in room
+const ROOM_TIMEOUT = 100; // Room timeout in secconds
 io.on("connection", socket => {
     console.log('a user connected to server');
 
@@ -42,24 +43,20 @@ io.on("connection", socket => {
     
     function handleNewLobby() {
         console.log("Handling new game");
-        let roomID = makeid(6); // IMPORTANT: need to check if already a client room name
-        
-        // clientRooms[socket.id] = roomID;
-        games[roomID] = new CustomGame(config,roomID,socket); // Spawn a new headless phaser instance
-        // console.log(games);
+        let roomID = makeid(6); 
 
-
-        // socket.join(roomID);
-        // var game = games[roomID];
-        // console.log(game);
-        // game.addPlayer(socket);;
+        // Check if roomID already exists
+        while (roomID in games) {
+            roomID = makeid(6);
+        }
         
+        // Spawn a new (headless) phaser instance. 
+        games[roomID] = new CustomGame(config,roomID,socket); 
     }
 
   
 
     function handleJoinGame(roomID) {
-        console.log('bruh');
         console.log(socket.id+' attemping to join lobby: '+roomID);
         var game = games[roomID];
         if (!game) {
@@ -81,6 +78,16 @@ io.on("connection", socket => {
             return;
         }
 
+        // Check if game has already been started
+        if(game.scene.scenes[0].started) {
+            console.log('Game in lobby ' + roomID + ' has already begun :(');
+            socket.leave(roomID);
+            socket.emit('joinFailed',roomID,'game-begun');
+            return;
+        }
+
+
+        // OKAY TO JOIN 
 
         // emit join success
         socket.emit('joinSuccess',roomID);
