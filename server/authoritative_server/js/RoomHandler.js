@@ -34,7 +34,7 @@ io.on("connection", socket => {
         var game = games[roomID];
         if (!game) {
             console.log('Lobby' + roomID +' does not exist!');
-            socket.emit('joinLobbyFailed',roomID,'not-a-room');
+            socket.emit('joinLobbyStatus',roomID,'not-a-room');
             return;
         }
 
@@ -47,7 +47,7 @@ io.on("connection", socket => {
         if(room.size>ROOM_CAPACITY) {
             console.log('Lobby' + roomID +' is full! :(');
             socket.leave(roomID);
-            socket.emit('joinFailed',roomID,'room-full');
+            socket.emit('joinLobbyStatus',roomID,'room-full');
             return;
         }
 
@@ -55,7 +55,7 @@ io.on("connection", socket => {
         if(game.scene.scenes[0].started) {
             console.log('Game in lobby ' + roomID + ' has already begun :(');
             socket.leave(roomID);
-            socket.emit('joinFailed',roomID,'game-begun');
+            socket.emit('joinLobbyStatus',roomID,'game-begun');
             return;
         }
 
@@ -63,35 +63,27 @@ io.on("connection", socket => {
         // OKAY TO JOIN 
 
         // emit join success
-        
-
         game.addPlayer(socket,nickname);
      
         // Send updated leaderboard to room
         io.to(roomID).emit('updateLeaderBoard', game.scene.scenes[0].leaderboard); // game.scene.scene[0].players
 
-        // Send the players object to the player
-        
-
-        // Update all other players of the new player
-        // socket.broadcast.to(roomID).emit('newPlayerJoining');
-
-        // TODO: send tube locations to new player
-
         console.log('User: '+ socket.id +' done joining');
-        socket.emit('joinSuccess',roomID);
+        socket.emit('joinLobbyStatus', roomID, 'join-successful');
         
     }
 
     socket.on('startGameLobby', () => {
         // Check if user is host
-        if(self.hostSocketID !== socket.id) { return false; }
+        if(self.hostSocketID !== socket.id) { return; }
         // Check that room exists (should definately exist)
-        if (!games[clientRooms[socket.id]]) { return false; }
+        if (!games[clientRooms[socket.id]]) { return; }
 
         game = games[clientRooms[socket.id]]
         console.log('GAME STARTING');
-        // send player object to all players
+
+        // Tell all players waiting in lobby that game is about to start
+        socket.broadcast.to(clientRooms[socket.id]).emit('gameStartingNow');
         
         // start game
         game.startGame();
@@ -131,7 +123,7 @@ io.on("connection", socket => {
             game.removePlayer(socket.id);
 
             io.to(clientRooms[socket.id]).emit('updateLeaderBoard', game.scene.scenes[0].leaderboard);
-            io.to(clientRooms[socket.id]).emit('removePlayer',socket.id);
+            io.to(clientRooms[socket.id]).emit('playerDisconnect',socket.id);
             
             console.log(game.scene.scenes[0].players);
             console.log(game.players);

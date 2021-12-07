@@ -14,14 +14,15 @@ class PlayGame extends Phaser.Scene {
 
     create() {
         var camera = this.cameras.main;
-        console.log('Play Game Scene Begun')
+        console.log('Play Game Scene Begun'
+        )
         this.socket = this.game.socket;
 
         var self = this;
         this.players = this.add.group();
         this.tubes = this.add.group();
 
-        this.socket.emit('startGameLobby');
+        
 
         // Get game data
         this.socket.on('gameData', function (players,tubePoints) {
@@ -56,7 +57,16 @@ class PlayGame extends Phaser.Scene {
             });
         });
 
-        
+
+        this.socket.on('playerDisconnect', (playerID) => {
+            self.players.getChildren().forEach(function (player) {
+                if (playerID === player.playerID) {
+                    player.destroy();
+                }
+            });
+
+        });
+
         this.socket.on('countdown', (num) => {
 
         });

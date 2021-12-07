@@ -6,6 +6,7 @@ var config = {
     },
     width: 800,
     height: 600,
+    backgroundColor: '#35adf2',
     scene: [MainMenu, HostLobby, JoinLobbyInput, JoinLobby, PlayGame]
   };
 

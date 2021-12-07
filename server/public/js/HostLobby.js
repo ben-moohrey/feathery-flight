@@ -16,12 +16,31 @@ class HostLobby extends Phaser.Scene {
     }
     
     create() {
-
-        // TODO: Setup lobby scoreboard
-        
+        var self = this; 
+        var mainMenuDialog = CreateHostLobbyDialog(this, {
+            x: 400,
+            y: 300,
+            width: 400,
+            title: '',
+            username: '',
+        })
+            .on('hostStartGame', function (lobbyID) {
+                if(self.okayToStart) {
+                    console.log('starting game')
+                  
+                    self.socket.emit('startGameLobby');
+                    self.scene.start('playGame');
+                }
+                
+            })
+            .on('updateTitle',function(roomID) {
+                console.log('well all be')
+                self.rexUI.edit(mainMenuDialog.getElement('titleField'), roomID);
+            })
+            //.drawBounds(this.add.graphics(), 0xff0000);
+            .popUp(500);
 
         // Connect to server
-        var self = this; 
         this.game.socket = io();
         this.socket = this.game.socket;
         console.log("socketid before scene change: "+ this.socket.id);
@@ -39,72 +58,28 @@ class HostLobby extends Phaser.Scene {
             this.socket.emit('joinGame',this.roomID,this.nickname);
         })
 
-        // Join lobby failed
-        this.socket.on('joinLobbyFailed', (failCode)=> {
-            if (failCode==='room-full') {
+        // Join lobby status
+        this.socket.on('joinLobbyStatus', (roomID,code)=> {
+            if (code==='room-full') {
                 // TODO: Handle full room
             }
-            else if (failCode==='not-a-room') {
+            else if (code==='not-a-room') {
                 // TODO: Handle not a room
             }
+            else if (code==='game-begun') {
+                // TODO: Handle game-begun
+            }
+            else if (code==='join-successful') {
+                self.okayToStart = true;
+                mainMenuDialog.emit('updateTitle',(roomID));
+            }
         })
-
-        this.players = this.add.group();
-
-
+ 
+        // Update leaderboard
         this.socket.on('updateLeaderBoard', (leaderboard) => {
             console.log('Leaderboard update');
             console.log(leaderboard);
-
         });
-        
-        // On players need to add set this.players = new players
-        this.socket.on('currentPlayers', function (players) {
-            // Object.keys(players).forEach(function (id) {
-            //     if (players[id].playerID === self.socket.id) {
-            //         displayPlayers(self, players[id], 'bird');
-            //     } else {
-            //         displayPlayers(self, players[id], 'bird');
-            //     }
-            // });
-            // this.players
-        });
-        
-
-        this.socket.on('currentPlayers', function (players) {
-            console.log('receiving current players');
-        });
-
-
-        this.socket.on('joinSuccess', (a)=> {
-            self.okayToStart = true;
-        });
-
-        var mainMenuDialog = CreateHostLobbyDialog(this, {
-            x: 400,
-            y: 300,
-            title: '',
-            username: '',
-        })
-            .on('hostStartGame', function (lobbyID) {
-                if(self.okayToStart) {
-                    console.log('starting game')
-                    console.log(lobbyID);
-                    self.lobbyID = lobbyID;
-                  
-                    self.scene.start('playGame');
-                }
-                
-            })
-            //.drawBounds(this.add.graphics(), 0xff0000);
-            .popUp(500);
-
-        function addPlayersToLocalPlayers(players) {
-
-        }
-
-
-
     }
     
     update() {
@@ -112,6 +87,7 @@ class HostLobby extends Phaser.Scene {
     }
     
 }
+
 
 var CreateHostLobbyDialog = function (scene, config, onSubmit) {
     var username = GetValue(config, 'username', '');
@@ -123,25 +99,64 @@ var CreateHostLobbyDialog = function (scene, config, onSubmit) {
     var height = GetValue(config, 'height', undefined);
     
     var background = scene.rexUI.add.roundRectangle(0, 0, 10, 10, 10, COLOR_PRIMARY);
-    var titleField = scene.add.text(0, 0, title);
-    var userNameField = scene.rexUI.add.label({
-        orientation: 'x',
-        background: scene.rexUI.add.roundRectangle(0, 0, 10, 10, 10).setStrokeStyle(2, COLOR_LIGHT),
-        // icon: scene.add.image(0, 0, 'user'),
-        text: scene.rexUI.add.BBCodeText(0, 0, username, { fixedWidth: 150, fixedHeight: 36, valign: 'center' }),
-        space: { top: 5, bottom: 5, left: 5, right: 5, icon: 10, }
+    var titleField = scene.add.text(0, 0, title).on('updateTitle', (roomID)=>{
+        console.log('llookyhere')
+        scene.rexUI.edit(textField.getElement('text'), roomID);
     })
-        .setInteractive()
-        .on('pointerdown', function () {
-            var config = {
-                onTextChanged: function(textObject, text) {
-                    username = text;
-                    textObject.text = text;
+
+    var scrollablePanel = scene.rexUI.add.scrollablePanel({
+        x: x,
+        y: y,
+        width: width,
+        height: height,
+
+        scrollMode: 0,
+
+        background: scene.rexUI.add.roundRectangle(0, 0, 2, 2, 10, COLOR_PRIMARY),
+
+        panel: {
+            child: scene.rexUI.add.fixWidthSizer({
+                space: {
+                    left: 3,
+                    right: 3,
+                    top: 3,
+                    bottom: 3,
+                    item: 8,
+                    line: 8,
                 }
-            }
-            scene.rexUI.edit(userNameField.getElement('text'), config);
-        });
+            }),
+
+
+            mask: {
+                padding: 1
+            },
+        },
+
+        slider: {
+            track: scene.rexUI.add.roundRectangle(0, 0, 20, 10, 10, COLOR_DARK),
+            thumb: scene.rexUI.add.roundRectangle(0, 0, 0, 0, 13, COLOR_LIGHT),
+        },
     
+        // scroller: true,
+        scroller: {
+            // pointerOutRelease: false
+        },
+    
+        mouseWheelScroller: {
+            focus: false,
+            speed: 0.1
+        },
+
+        space: {
+            left: 10,
+            right: 10,
+            top: 10,
+            bottom: 10,
+
+            panel: 10,
+        }
+    });
+
     var startGameButton = scene.rexUI.add.label({
         orientation: 'x',
         background: scene.rexUI.add.roundRectangle(0, 0, 10, 10, 10, COLOR_LIGHT),
@@ -163,10 +178,11 @@ var CreateHostLobbyDialog = function (scene, config, onSubmit) {
     })
         .addBackground(background)
         .add(titleField, 0, 'center', { top: 10, bottom: 10, left: 10, right: 10 }, false)
-        .add(userNameField, 0, 'left', { bottom: 10, left: 10, right: 10 }, true)
+        .add(scrollablePanel, 0, 'center', { top: 10, bottom: 10, left: 10, right: 10 }, false)
         // .add(passwordField, 0, 'left', { bottom: 10, left: 10, right: 10 }, true)
         .add(startGameButton, 0, 'center', { bottom: 10, left: 10, right: 10 }, false)
         // .add(backButton, 0, 'center', { bottom: 10, left: 10, right: 10 }, false)
+        
         .layout();
     return loginDialog;
     };

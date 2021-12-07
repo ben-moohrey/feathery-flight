@@ -100,22 +100,10 @@ class CustomGame extends Phaser.Game {
       var y1 = multipoint[1][0];
       var y2 = multipoint[1][1];
 
-      // console.log('hm')
-      // May have hitbox problem
-      // Top pipe 
-      // const pipe1 = currScene.physics.add.image(x, y1, 'pipe').setOrigin(0.5, 1).setDisplaySize(80, 600).flipX;
-      // const pipe2 = currScene.physics.add.image(x, y2, 'pipe').setOrigin(0.5, 0).setDisplaySize(80, 600);
-
-      // console.log('hmpr2')
-      // currScene.physicsTubes.add(pipe1);
-      // currScene.physicsTubes.add(pipe2);
-      // console.log('its never easy')
-      const pipeTop = currScene.physicsTubes.create(x, y1, 'pipe').setOrigin(0.5, 1).setDisplaySize(80, 600);
+      const pipeTop = currScene.physicsTubes.create(x, y1, 'pipe').setOrigin(0.5, 0).setSize(80, 600);
       pipeTop.body.allowGravity = false;
       
-
-
-      const pipeBottom = currScene.physicsTubes.create(x, y2, 'pipe').setOrigin(0.5, 0).setDisplaySize(80, 600);
+      const pipeBottom = currScene.physicsTubes.create(x, y2, 'pipe').setOrigin(0.5, 1).setSize(80, 600);
       pipeBottom.body.allowGravity = false
     }
   }
@@ -127,29 +115,30 @@ class CustomGame extends Phaser.Game {
     // currScene is reference to the scene
     var currScene = this.scene.scenes[0];
     if (currScene.started) { return; }
+    if (currScene.countingDown) { return; }
 
     // Send the current players in lobby and also the generated tubePoints
-    io.to(self.roomID).emit('gameData',currScene.players,currScene.tubePoints);
-    currScene.started = true;
+    currScene.countingDown = true;
 
-    console.log('GAME STARTED');
+    console.log('GAME ABOUT TO START');
 
     console.log('Countdown begin!');
-    console.log('3')
-    io.to(self.roomID).emit('countdown',3);
-    setTimeout( () => {
-      console.log('2')
-      io.to(self.roomID).emit('countdown',2);
-      setTimeout( () => {
-        console.log('1');
-        io.to(self.roomID).emit('countdown',1);
-        setTimeout(() => {
-          console.log("GO")
-          io.to(self.roomID).emit('countdown',0);
+    timer(10);
+    function timer (count) {
+      let timer = setInterval(()=>{
+        console.log(count)
+        io.to(self.roomID).emit('countdown',count);
+        if(count==0) { 
+          clearInterval(timer); 
+          currScene.started = true;
+          currScene.countingDown = false;
+          io.to(self.roomID).emit('gameData',currScene.players,currScene.tubePoints);
           currScene.physics.resume();
-        },1000)
-      },1000)
-    },1000)
+        }
+        count--;
+      }, 1000);
+      
+    }
 
   }
 
@@ -180,9 +169,6 @@ function create() {
   this.physics.world.setBounds( 0, 0, self.canvas.width*2, self.canvas.height);
 
 
-
-  
-
   // Min: min value, max: max (y) value, spaceApart: distance between pipe openings
   // spaceApart: distance between sets of pipes
   function generateTubes(min,max,spaceBetween,spaceApart,startingPoint) {
@@ -198,16 +184,16 @@ function create() {
   function randomPosition(min,max) {
     return Math.floor(Math.random() * max) + min;
   }
+
   
-
-  // TODO: Create tubes
-  // this.physics.add.collider(this.physicsPlayers);
-
-  // Add tube hitbox
-  // this.physics.add.overlap(this.physicsPlayers,,function(star,player)=>{
+  
 
   this.physics.add.collider(this.physicsPlayers, this.physicsTubes, function (player, obstacle) {
     console.log('You hit a tube');
+
+    player.x = self.game.canvas.width/2;
+    player.y = self.game.canvas.height/2;
+
 
       
   });
@@ -217,19 +203,10 @@ function create() {
   this.tubePoints = generateTubes(20,self.canvas.height-20,150,300,self.canvas.width+10); // adding commit tubes
   this.game.addPhysicsTubes(this.tubePoints,this.physicsTubes);
 
+  console.log(this.tubePoints) //this.tubePoints[20][0]
 
+  this.physics.world.setBounds(0, 0, this.tubePoints[19][0]+100, self.canvas.height);
 
-  
-  // this.physics.add.overlap(this.players, this.star, function (star, player) {
-  //   if (players[player.playerId].team === 'red') {
-  //     self.scores.red += 10;
-  //   } else {
-  //     self.scores.blue += 10;
-  //   }
-  //   self.star.setPosition(randomPosition(700), randomPosition(500));
-  //   io.emit('updateScore', self.scores);
-  //   io.emit('starLocation', { x: self.star.x, y: self.star.y });
-  // });
 
   this.game.initialized = true;
   console.log('Lobby '+ this.roomID+ ' initialized!');
@@ -242,20 +219,27 @@ function update() {
   const self = this;
 
   // Make sure game is started and initialized
-  
   if (this.game.initialized && this.started && Object.keys(self.players).length>0) {
     self.physicsPlayers.getChildren().forEach( (player)=> {
-      const input = self.players[player.playerID].input;
-      player.setVelocityX(55); // Update players x velocity
+      if (self.players[player.playerID]) {
+        
+        const input = self.players[player.playerID].input;
+        player.setVelocityX(55); // Update players x velocity
 
-      if(input.jump) {
-        player.setVelocityY( -300 );
+        if(input.jump) {
+          player.setVelocityY( -300 );
+        }
+        input.jump = false;
+    
+        self.players[player.playerID].x = player.x;
+        self.players[player.playerID].y = player.y;
+        self.players[player.playerID].rotation = player.rotation;
+
+        if (player.x >= this.tubePoints[19][0]+10) {
+          console.log('You Won!');
+          io.to(self.roomID).emit('gameWon');
+        }
       }
-      input.jump = false;
-  
-      self.players[player.playerID].x = player.x;
-      self.players[player.playerID].y = player.y;
-      self.players[player.playerID].rotation = player.rotation;
     });
     self.physics.world.wrap(self.physicsPlayers, 5);
     io.to(self.roomID).emit('playerUpdates', self.players);
