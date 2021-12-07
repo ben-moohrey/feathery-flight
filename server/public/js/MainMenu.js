@@ -24,7 +24,7 @@ class MainMenu extends Phaser.Scene {
         var self = this;
         var print = this.add.text(0, 0, '');
         // loginDialog
-       var mainMenuDialog = CreateMainMenuDialog(this, {
+        var mainMenuDialog = CreateMainMenuDialog(this, {
             x: 400,
             y: 300,
             title: 'Flappy Bird',

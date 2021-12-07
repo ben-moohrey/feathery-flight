@@ -11,16 +11,27 @@ class JoinLobby extends Phaser.Scene {
         });  
     }
     create() {
-        var self = this;
-        this.socket = io(); // Connnect to server
+        // Connect to server
+        var self = this; 
+        this.game.socket = io();
+        this.socket = this.game.socket;
         console.log('Connected to server!');
+
+        // Get lobbyID and nickname
         this.lobbyID = this.scene.get('joinLobbyInput').lobbyID;
+        this.nickname = this.scene.get('mainMenu').nickname;
 
         // Try to join lobby
         console.log(this.lobbyID);
         
-        this.socket.emit('joinGame',this.lobbyID);
+        this.socket.emit('joinGame',this.lobbyID,this.nickname);
 
+
+
+
+
+
+        
         this.socket.on('updateLeaderBoard', (leaderboard) => {
             console.log(leaderboard)
         });

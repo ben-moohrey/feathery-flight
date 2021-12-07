@@ -30,14 +30,13 @@ class HostLobby extends Phaser.Scene {
 
         // Get nickname from mainMenu scene
         this.nickname = this.scene.get('mainMenu').nickname;
-        this.socket.nickname = this.nickname;
 
         // Connect to lobby
         this.socket.emit('createNewLobby');
         this.socket.on('lobbyInitialized', (iD) => {
             this.roomID = iD;
             console.log("roomID:"+iD);
-            this.socket.emit('joinGame',this.roomID);
+            this.socket.emit('joinGame',this.roomID,this.nickname);
         })
 
         // Join lobby failed
@@ -75,6 +74,7 @@ class HostLobby extends Phaser.Scene {
         this.socket.on('currentPlayers', function (players) {
             console.log('receiving current players');
         });
+
 
         this.socket.on('joinSuccess', (a)=> {
             self.okayToStart = true;

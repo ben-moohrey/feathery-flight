@@ -29,7 +29,7 @@ io.on("connection", socket => {
 
   
 
-    function handleJoinGame(roomID) {
+    function handleJoinGame(roomID,nickname) {
         console.log(socket.id+' attemping to join lobby: '+roomID);
         var game = games[roomID];
         if (!game) {
@@ -65,7 +65,7 @@ io.on("connection", socket => {
         // emit join success
         
 
-        game.addPlayer(socket);
+        game.addPlayer(socket,nickname);
      
         // Send updated leaderboard to room
         io.to(roomID).emit('updateLeaderBoard', game.scene.scenes[0].leaderboard); // game.scene.scene[0].players
@@ -74,7 +74,7 @@ io.on("connection", socket => {
         
 
         // Update all other players of the new player
-        socket.broadcast.to(roomID).emit('newPlayerJoining');
+        // socket.broadcast.to(roomID).emit('newPlayerJoining');
 
         // TODO: send tube locations to new player
 
@@ -83,14 +83,21 @@ io.on("connection", socket => {
         
     }
 
-    socket.on('startGameLobby', ()=> {
-        // Check
+    socket.on('startGameLobby', () => {
+        // Check if user is host
         if(self.hostSocketID !== socket.id) { return false; }
+        // Check that room exists (should definately exist)
+        if (!games[clientRooms[socket.id]]) { return false; }
+
+        game = games[clientRooms[socket.id]]
         console.log('GAME STARTING');
         // send player object to all players
-        socket.emit('currentPlayers',game.scene.scenes[0].players);
+        
         // start game
-        game.scene.scenes[0].startGame();
+        game.startGame();
+
+        
+
 
     });
 
@@ -105,12 +112,14 @@ io.on("connection", socket => {
         }
     });
 
+  
+
     function handlePlayerInput(self, playerID, input, rn) {
         if (!games[rn]) { return; }
         var game = games[rn];
         game.scene.scenes[0].physicsPlayers.getChildren().forEach((player) => {
             if (playerID === player.playerID) {
-                game.scene.scenes[0].physicsPlayers[player.playerId].input = input;
+                game.scene.scenes[0].players[player.playerID].input = input;
             }
         });
     }
@@ -139,7 +148,6 @@ io.on("connection", socket => {
             }
 
             delete clientRooms[socket.id];
-
         }
         
     });
