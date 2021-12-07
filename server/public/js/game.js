@@ -6,7 +6,7 @@ var config = {
     },
     width: 800,
     height: 600,
-    scene: [MainMenu, CreateLobby, JoinLobbyInput, JoinLobby]
+    scene: [MainMenu, HostLobby, JoinLobbyInput, JoinLobby, PlayGame]
   };
 
   var game = new Phaser.Game(config);

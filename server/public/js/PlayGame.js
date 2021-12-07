@@ -4,32 +4,42 @@ class PlayGame extends Phaser.Scene {
     }
 
     preload() {
-
+        // get socket from game object  
+        this.load.image('bird', 'assets/bird.png');
+        
     }
 
     create() {
-        // get socket from JoinLobby
-        this.socket = this.scene.get('mainMenu').nickname;
+        console.log('Play Game Scene Begun')
+        this.socket = this.game.socket;
+
+        var self = this;
+        this.players = this.add.group();
+        this.socket.emit('startGameLobby');
+        
+        this.cursors = this.input.keyboard.createCursorKeys();
+        this.spaceKeyPressed = false;
+        
     }
 
     update() {
         const up = this.spaceKeyPressed;
-        if (this.cursors.left.isDown) {
-            this.leftKeyPressed = true;
-        } else if (this.cursors.right.isDown) {
-            this.rightKeyPressed = true;
-        } else {
-            this.leftKeyPressed = false;
-            this.rightKeyPressed = false;
-        }
         if (this.cursors.up.isDown) {
             this.upKeyPressed = true;
         } else {
             this.upKeyPressed = false;
         }
-        if (left !== this.leftKeyPressed || right !== this.rightKeyPressed || up !== this.upKeyPressed) {
-            this.socket.emit('playerInput', { left: this.leftKeyPressed , right: this.rightKeyPressed, up: this.upKeyPressed });
+
+        if (up !== this.upKeyPressed) {
+            this.socket.emit('playerInput', { jump: this.upKeyPressed });
             console.log("PLAYER TRYING TO MOVE")
         }
+    }
+    
+    displayPlayers(self, playerInfo, sprite, tint) {
+        const player = self.add.sprite(playerInfo.x, playerInfo.y, sprite).setOrigin(0.5, 0.5).setDisplaySize(53, 40);
+        player.setTint(tint);
+        player.playerID = playerInfo.playerID;
+        self.players.add(player);
     }
 }
