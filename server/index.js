@@ -37,7 +37,10 @@ function setupAuthoritativePhaser() {
       }
     };
     dom.window.URL.revokeObjectURL = (objectURL) => {};
-    server.listen(8081, function () {
+
+    let port = process.env.PORT;
+    (!port || port==="") ? port=8081:port;
+    server.listen(port, function () {
       console.log(`Listening on ${server.address().port}`);
     });
     dom.window.io = io;
