@@ -110,9 +110,9 @@ class PlayGame extends Phaser.Scene {
             var y1 = multipoint[1][0];
             var y2 = multipoint[1][1];
 
-            const pipeTop = self.tubes.create(x, y1, 'pipe').setOrigin(0.5, 1).setDisplaySize(80, 600);
-            pipeTop.flipX-true;
-            const pipeBottom = self.tubes.create(x, y2, 'pipe').setOrigin(0.5, 0).setDisplaySize(80, 600);
+            const pipeTop = self.tubes.create(x, y1, 'pipe').setSize(80, 600).setOrigin(0.5, 1).setDisplaySize(80, 600);;
+            // pipeTop.flipX = true;
+            const pipeBottom = self.tubes.create(x, y2, 'pipe').setSize(80, 600).setOrigin(0.5, 0).setDisplaySize(80, 600);
         }
     }
     

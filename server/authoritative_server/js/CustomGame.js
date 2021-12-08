@@ -6,10 +6,9 @@ const config = {
   height: 600,
   physics: {
     default: 'arcade',
-    fps: 60,
     arcade: {
       gravity: { y: 350},
-      debug: true
+      debug: false
       
     }
   },
@@ -46,7 +45,9 @@ class CustomGame extends Phaser.Game {
       nickname: nickname,
       input: {
         jump: false
-      }
+      },
+      dead: false
+      
     }
 
     self.addPhysicsPlayer(self, currScene.players[socket.id]);
@@ -100,11 +101,13 @@ class CustomGame extends Phaser.Game {
       var y1 = multipoint[1][0];
       var y2 = multipoint[1][1];
 
-      const pipeTop = currScene.physicsTubes.create(x, y1, 'pipe').setOrigin(0.5, 0).setSize(80, 600);
+      const pipeTop = currScene.physicsTubes.create(x, y1, 'pipe').setSize(80, 600).setOrigin(0.5, 1).setDisplaySize(80, 600);
       pipeTop.body.allowGravity = false;
+      pipeTop.body.immovable = true;
       
-      const pipeBottom = currScene.physicsTubes.create(x, y2, 'pipe').setOrigin(0.5, 1).setSize(80, 600);
+      const pipeBottom = currScene.physicsTubes.create(x, y2, 'pipe').setSize(80, 600).setOrigin(0.5, 0).setDisplaySize(80, 600);
       pipeBottom.body.allowGravity = false
+      pipeBottom.body.immovable = true;
     }
   }
 
@@ -123,7 +126,7 @@ class CustomGame extends Phaser.Game {
     console.log('GAME ABOUT TO START');
 
     console.log('Countdown begin!');
-    timer(10);
+    timer(5);
     function timer (count) {
       let timer = setInterval(()=>{
         console.log(count)
@@ -193,7 +196,8 @@ function create() {
 
     player.x = self.game.canvas.width/2;
     player.y = self.game.canvas.height/2;
-
+    self.players[player.playerID].x = self.game.canvas.width/2;
+    self.players[player.playerID].y = self.game.canvas.height/2;
 
       
   });
@@ -219,13 +223,16 @@ function update() {
   const self = this;
 
   // Make sure game is started and initialized
-  if (this.game.initialized && this.started && Object.keys(self.players).length>0) {
-    self.physicsPlayers.getChildren().forEach( (player)=> {
-      if (self.players[player.playerID]) {
-        
-        const input = self.players[player.playerID].input;
-        player.setVelocityX(55); // Update players x velocity
+  if (this.game.initialized && this.started) {
 
+    self.physicsPlayers.getChildren().forEach( (player)=> {
+
+      if (self.players[player.playerID]) {
+
+        const input = self.players[player.playerID].input;
+
+
+        player.setVelocityX(55); // Update players x velocity
         if(input.jump) {
           player.setVelocityY( -300 );
         }
@@ -233,17 +240,20 @@ function update() {
     
         self.players[player.playerID].x = player.x;
         self.players[player.playerID].y = player.y;
-        self.players[player.playerID].rotation = player.rotation;
+        
 
         if (player.x >= this.tubePoints[19][0]+10) {
           console.log('You Won!');
           io.to(self.roomID).emit('gameWon');
         }
       }
+      self.physics.world.wrap(self.physicsPlayers, 5);
+      io.to(self.roomID).emit('playerUpdates', self.players);
     });
-    self.physics.world.wrap(self.physicsPlayers, 5);
-    io.to(self.roomID).emit('playerUpdates', self.players);
+    
+    
   }
+  
 
 }
 
