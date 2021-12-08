@@ -51,6 +51,6 @@ app.get('/', function (req, res) {
 // }
 // setupAuthoritativePhaser();
 const PORT = process.env.PORT || 8081;
-    server.listen(PORT, function () {
-      console.log(`Listening on ${server.address().port}`);
-  });
+server.listen(PORT, function () {
+  console.log(`Listening on ${server.address().port}`);
+});
