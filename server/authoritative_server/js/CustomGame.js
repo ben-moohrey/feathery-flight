@@ -101,11 +101,11 @@ class CustomGame extends Phaser.Game {
       var y1 = multipoint[1][0];
       var y2 = multipoint[1][1];
 
-      const pipeTop = currScene.physicsTubes.create(x, y1, 'pipe').setSize(80, 600).setOrigin(0.5, 1).setDisplaySize(80, 600);
+      const pipeTop = currScene.physicsTubes.create(x, y1, 'pipe').setOrigin(0.5, 1).setDisplaySize(80, 600);
       pipeTop.body.allowGravity = false;
       pipeTop.body.immovable = true;
       
-      const pipeBottom = currScene.physicsTubes.create(x, y2, 'pipe').setSize(80, 600).setOrigin(0.5, 0).setDisplaySize(80, 600);
+      const pipeBottom = currScene.physicsTubes.create(x, y2, 'pipe').setOrigin(0.5, 0).setDisplaySize(80, 600);
       pipeBottom.body.allowGravity = false
       pipeBottom.body.immovable = true;
     }
@@ -215,7 +215,7 @@ function create() {
   this.game.initialized = true;
   console.log('Lobby '+ this.roomID+ ' initialized!');
   this.hostSocket.emit('lobbyInitialized', this.roomID);
-  
+
 }
 
 
@@ -237,7 +237,7 @@ function update() {
           player.setVelocityY( -300 );
         }
         input.jump = false;
-    
+        
         self.players[player.playerID].x = player.x;
         self.players[player.playerID].y = player.y;
         
