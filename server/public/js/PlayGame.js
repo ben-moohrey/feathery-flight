@@ -13,7 +13,7 @@ class PlayGame extends Phaser.Scene {
     }
 
     create() {
-        var camera = this.cameras.main;
+        this.camera = this.cameras.main;
         console.log('Play Game Scene Begun'
         )
         this.socket = this.game.socket;
@@ -22,12 +22,16 @@ class PlayGame extends Phaser.Scene {
         this.players = this.add.group();
         this.tubes = this.add.group();
 
-        
 
         // Get game data
         this.socket.on('gameData', function (players,tubePoints) {
             // display players
             Object.keys(players).forEach(function (id) {
+                //Camera
+                // if (id==self.socket.id) {
+                //     self.camera.centerOn(players[id].x,self.game.canvas.height/2);
+                // }
+
                 if (players[id].playerID === self.socket.id) {
                     self.displayPlayers(self, players[id], 'bird', true);
                 } else {
@@ -42,21 +46,15 @@ class PlayGame extends Phaser.Scene {
 
         this.socket.on('playerUpdates', function (players) {
             Object.keys(players).forEach(function (id) {
-                // Camera
-                if (id==self.socket.id) {
-                    camera.centerOn(players[id].x,self.game.canvas.height/2);
-                }
+                
                 self.players.getChildren().forEach(function (player) {
                     if (players[id].playerID === player.playerID) {
                         player.setRotation(players[id].rotation);
                         player.setPosition(players[id].x, players[id].y);
-                    }
-                    
+                    } 
                 });
-
             });
         });
-
 
         this.socket.on('playerDisconnect', (playerID) => {
             self.players.getChildren().forEach(function (player) {
@@ -70,10 +68,6 @@ class PlayGame extends Phaser.Scene {
         this.socket.on('countdown', (num) => {
 
         });
-
-        
-        
-
 
         this.cursors = this.input.keyboard.createCursorKeys();
         this.spaceKeyPressed = false;
@@ -98,6 +92,9 @@ class PlayGame extends Phaser.Scene {
         const player = self.add.sprite(playerInfo.x, playerInfo.y, sprite).setOrigin(0.5, 0.5).setDisplaySize(53, 40);
         if (!visible) {
             player.alpha = 0.2;
+        }
+        else {
+            self.camera.startFollow(player);
         }
         player.playerID = playerInfo.playerID;
         self.players.add(player);

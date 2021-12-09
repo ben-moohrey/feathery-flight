@@ -43,9 +43,7 @@ class HostLobby extends Phaser.Scene {
         // Connect to server
         this.game.socket = io();
         this.socket = this.game.socket;
-        console.log("socketid before scene change: "+ this.socket.id);
         console.log("Connected to Server");
-        console.log(self)
 
         // Get nickname from mainMenu scene
         this.nickname = this.scene.get('mainMenu').nickname;

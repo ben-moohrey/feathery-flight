@@ -34,13 +34,13 @@ class MainMenu extends Phaser.Scene {
         })
             .on('createLobby', function (username) {
                 console.log(username);
-                self.nickname = username=='nickname' ? 'player' : '';
+                self.nickname = username=='nickname' ? 'player' : username;
             
-                self.scene.start('hostLobby');
+                self.scene.start('hostLobby2');
             })
             .on('joinLobby', function (username) {
                 console.log(username);
-                self.nickname = username=='nickname' ? 'player' : '';
+                self.nickname = username=='nickname' ? 'player' : username;
             
                 self.scene.start('joinLobbyInput');
             })

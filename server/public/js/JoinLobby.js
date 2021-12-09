@@ -22,7 +22,7 @@ class JoinLobby extends Phaser.Scene {
         this.nickname = this.scene.get('mainMenu').nickname;
 
         // Try to join lobby
-        console.log(this.lobbyID);
+        console.log(this.nickname);
         
         this.socket.emit('joinGame',this.lobbyID,this.nickname);
 
@@ -30,17 +30,24 @@ class JoinLobby extends Phaser.Scene {
         this.socket.on('joinLobbyStatus', (roomID,code)=> {
             if (code==='room-full') {
                 // TODO: Handle full room
+                this.socket.disconnect();
+                self.scene.start('joinLobbyInput');
             }
             else if (code==='not-a-room') {
                 // TODO: Handle not a room
+                this.socket.disconnect();
+                self.scene.start('joinLobbyInput');
             }
             else if (code==='game-begun') {
                 // TODO: Handle game-begun
+                this.socket.disconnect();
+                self.scene.start('joinLobbyInput');
             }
             else if (code==='join-successful') {
                 self.okayToStart = true;
+                self.scene.start('playGame');
             }
-        })
+        });
 
 
         // Update leaderboard
@@ -49,9 +56,9 @@ class JoinLobby extends Phaser.Scene {
             console.log(leaderboard);
         });
         
-        this.socket.on('gameStartingNow', () => {
-            self.scene.start('playGame');
-        })
+        // this.socket.on('gameStartingNow', () => {
+        //     self.scene.start('playGame');
+        // })
 
     }
 }

@@ -201,9 +201,7 @@ function create() {
 
       
   });
-  // });
-  // generateTubes(min,max,spaceBetween,spaceApart,startingPoint)
-  //generateTubes(20,self.canvas.height-20,150,300,self.canvas.width+10);
+
   this.tubePoints = generateTubes(20,self.canvas.height-20,150,300,self.canvas.width+10); // adding commit tubes
   this.game.addPhysicsTubes(this.tubePoints,this.physicsTubes);
 
@@ -211,7 +209,7 @@ function create() {
 
   this.physics.world.setBounds(0, 0, this.tubePoints[19][0]+100, self.canvas.height);
 
-
+  
   this.game.initialized = true;
   console.log('Lobby '+ this.roomID+ ' initialized!');
   this.hostSocket.emit('lobbyInitialized', this.roomID);
@@ -225,32 +223,36 @@ function update() {
   // Make sure game is started and initialized
   if (this.game.initialized && this.started) {
 
-    self.physicsPlayers.getChildren().forEach( (player)=> {
+    try {
+      self.physicsPlayers.getChildren().forEach( (player)=> {
 
-      if (self.players[player.playerID]) {
+        if (self.players[player.playerID]) {
 
-        const input = self.players[player.playerID].input;
+          const input = self.players[player.playerID].input;
 
 
-        player.setVelocityX(55); // Update players x velocity
-        if(input.jump) {
-          player.setVelocityY( -300 );
+          player.setVelocityX(55); // Update players x velocity
+          if(input.jump) {
+            player.setVelocityY( -300 );
+          }
+          input.jump = false;
+          
+          self.players[player.playerID].x = player.x;
+          self.players[player.playerID].y = player.y;
+          
+
+          if (player.x >= this.tubePoints[19][0]+10) {
+            console.log('You Won!');
+            io.to(self.roomID).emit('gameWon');
+          }
         }
-        input.jump = false;
-        
-        self.players[player.playerID].x = player.x;
-        self.players[player.playerID].y = player.y;
-        
-
-        if (player.x >= this.tubePoints[19][0]+10) {
-          console.log('You Won!');
-          io.to(self.roomID).emit('gameWon');
-        }
-      }
-      self.physics.world.wrap(self.physicsPlayers, 5);
-      io.to(self.roomID).emit('playerUpdates', self.players);
-    });
-    
+        self.physics.world.wrap(self.physicsPlayers, 5);
+        io.to(self.roomID).emit('playerUpdates', self.players);
+      });
+    }
+    catch (error) {
+      console.log('Players no longer exist')
+    }
     
   }
   
