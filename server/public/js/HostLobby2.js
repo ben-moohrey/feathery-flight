@@ -289,8 +289,6 @@ class HostLobby2 extends Phaser.Scene {
         })
             .layout()
         //.drawBounds(this.add.graphics(), 0xff0000);
-
-      
       
     }
 
@@ -303,18 +301,18 @@ var GetFooterSizer = function (scene, orientation) {
         orientation: orientation
     })
         .add(
-            CreateFooterButton(scene, 'Reset', orientation),   // child
+            createBackButton(scene, 'Back', orientation),   // child
             1,         // proportion
             'center'   // align
         )
         .add(
-            CreateFooterButton(scene, 'Exit', orientation),    // child
+            createStartGameButton(scene, 'Start Game', orientation),    // child
             1,         // proportion
             'center'   // align
         )
 }
 
-var CreateFooterButton = function (scene, text, orientation) {
+var createBackButton = function (scene, text, orientation) {
     return scene.rexUI.add.label({
         height: (orientation === 0) ? 40 : undefined,
         width: (orientation === 0) ? undefined : 40,
@@ -328,6 +326,33 @@ var CreateFooterButton = function (scene, text, orientation) {
     })
         .setInteractive()
         .on('pointerdown', function () {
-            console.log(`Pointer down ${text}`)
+            console.log(`About to do action: ${text}`);
+            if(scene.socket){scene.socket.disconnect();}
+            scene.scene.start('mainMenu');
+
+        })
+}
+
+var createStartGameButton = function (scene, text, orientation) {
+    return scene.rexUI.add.label({
+        height: (orientation === 0) ? 40 : undefined,
+        width: (orientation === 0) ? undefined : 40,
+        orientation: orientation,
+        background: scene.rexUI.add.roundRectangle(0, 0, 2, 2, 20, COLOR_LIGHT),
+        text: scene.add.text(0, 0, text),
+        align: 'center',
+        space: {           
+            icon: 10
+        }
+    })
+        .setInteractive()
+        .on('pointerdown', function () {
+            console.log(`About to do action: ${text}`);
+            if(scene.socket && scene.okayToStart){
+                scene.socket.emit('startGameLobby');
+                scene.scene.start('playGame');
+            }
+
+
         })
 }
