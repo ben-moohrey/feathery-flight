@@ -16,23 +16,6 @@ const datauri = new Datauri();
 
 const { JSDOM } = jsdom;
 
-const { Worker } = require('worker_threads')
-
-
-
-
-
-const worker = new Worker(`
-const { parentPort } = require('worker_threads');
-parentPort.once('message',
-    message => parentPort.postMessage({ pong: message }));  
-`, { eval: true });
-worker.on('message', message => console.log(message));      
-worker.postMessage('ping');  
-
-
-
-
 
 app.use(express.static(__dirname + '/public'));
 
@@ -65,6 +48,7 @@ function setupAuthoritativePhaser() {
       console.log(`Listening on ${server.address().port}`);
     });
     dom.window.io = io;
+    dom.window.EventEmitter = EventEmitter;
   }).catch((error) => {
     console.log(error.message);
   });

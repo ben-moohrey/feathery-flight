@@ -118,28 +118,6 @@ class HostLobby2 extends Phaser.Scene {
 
 
         var self = this; 
-        // var mainMenuDialog = CreateHostLobbyDialog(this, {
-        //     x: 400,
-        //     y: 300,
-        //     width: 400,
-        //     title: '',
-        //     username: '',
-        // })
-        //     .on('hostStartGame', function (lobbyID) {
-        //         if(self.okayToStart) {
-        //             console.log('starting game')
-                  
-        //             self.socket.emit('startGameLobby');
-        //             self.scene.start('playGame');
-        //         }
-                
-        //     })
-        //     .on('updateTitle',function(roomID) {
-        //         console.log('well all be')
-        //         self.rexUI.edit(mainMenuDialog.getElement('titleField'), roomID);
-        //     })
-        //     //.drawBounds(this.add.graphics(), 0xff0000);
-        //     .popUp(500);
 
         // Connect to server
         this.game.socket = io();
@@ -352,7 +330,5 @@ var createStartGameButton = function (scene, text, orientation) {
                 scene.socket.emit('startGameLobby');
                 scene.scene.start('playGame');
             }
-
-
         })
 }

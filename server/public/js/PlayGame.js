@@ -14,8 +14,7 @@ class PlayGame extends Phaser.Scene {
 
     create() {
         this.camera = this.cameras.main;
-        console.log('Play Game Scene Begun'
-        )
+        console.log('Play Game Scene Begun');
         this.socket = this.game.socket;
 
         var self = this;
@@ -62,11 +61,21 @@ class PlayGame extends Phaser.Scene {
                     player.destroy();
                 }
             });
-
         });
+
 
         this.socket.on('countdown', (num) => {
 
+        });
+
+
+        this.socket.on('playerWin', ()=> {
+            
+        });
+
+        this.socket.on('winners', (winners) => {
+            self.game.winners = winners;
+            console.log(self.game.winners);
         });
 
         this.cursors = this.input.keyboard.createCursorKeys();

@@ -1,3 +1,5 @@
+
+
 // store key=socket.id, value = roomID
 const clientRooms = {}
 
@@ -5,6 +7,8 @@ const clientRooms = {}
 const games = {} // Store phaser game instances
 const ROOM_CAPACITY = 20; // Max users in room
 const ROOM_TIMEOUT = 100; // Room timeout in secconds
+
+
 io.on("connection", socket => {
     
     const self = this;
@@ -79,7 +83,7 @@ io.on("connection", socket => {
         // Check that room exists (should definately exist)
         if (!games[clientRooms[socket.id]]) { return; }
 
-        game = games[clientRooms[socket.id]]
+        game = games[clientRooms[socket.id]];
         console.log('GAME STARTING');
 
         // Tell all players waiting in lobby that game is about to start
@@ -96,12 +100,10 @@ io.on("connection", socket => {
     socket.on('playerInput', function(inputData) {
         // TODO: check if game has begun 
         if (!clientRooms[socket.id]) { return; }
-
         console.log('Player Trying To Move');
         var localRoomName = clientRooms[socket.id];
-        if (true) {
-            handlePlayerInput(self, socket.id, inputData, localRoomName);
-        }
+
+        handlePlayerInput(self, socket.id, inputData, localRoomName);
     });
 
   
@@ -109,6 +111,9 @@ io.on("connection", socket => {
     function handlePlayerInput(self, playerID, input, rn) {
         if (!games[rn]) { return; }
         var game = games[rn];
+
+        // check if player has been removed from game
+        if (!game.players[playerID]) {return; }
         game.scene.scenes[0].physicsPlayers.getChildren().forEach((player) => {
             if (playerID === player.playerID) {
                 game.scene.scenes[0].players[player.playerID].input = input;

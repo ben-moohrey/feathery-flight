@@ -27,6 +27,7 @@ class CustomGame extends Phaser.Game {
     this.hostSocket = hostSocket;
     this.players = {}
     this.leaderboard = [];
+    this.winners = [];
   }
 
   // All function below refer to self as game object (Phaser advises against lols)
@@ -60,13 +61,14 @@ class CustomGame extends Phaser.Game {
     var self = this;
     if(!self.initialized) return; 
     const currScene = this.scene.scenes[0];
+    delete currScene.players[playerId];
     currScene.physicsPlayers.getChildren().forEach((player) => {
       if (playerId === player.playerId) {
         player.destroy();
       }
     });
     
-    delete currScene.players[playerId];
+    
 
     for(var i = 0; i < currScene.leaderboard.length; i++) {
       if (currScene.leaderboard[i][0] === playerId) {
@@ -145,6 +147,13 @@ class CustomGame extends Phaser.Game {
 
   }
 
+  // endGame() {
+  //   this.render.destroy();
+  //   this.loop.stop();
+  //   this.canvas.remove();
+  // }
+
+
 }
 
 function preload() {
@@ -176,7 +185,7 @@ function create() {
   // spaceApart: distance between sets of pipes
   function generateTubes(min,max,spaceBetween,spaceApart,startingPoint) {
     const tubes = [];
-    for (var i = 0; i < 20; i++) {
+    for (var i = 0; i < 10; i++) {
       var x = startingPoint + (i * spaceApart);
       var y1 = randomPosition(min,max-spaceBetween);
       var y2 = y1 + spaceBetween;
@@ -188,7 +197,6 @@ function create() {
     return Math.floor(Math.random() * max) + min;
   }
 
-  
   
 
   this.physics.add.collider(this.physicsPlayers, this.physicsTubes, function (player, obstacle) {
@@ -202,14 +210,14 @@ function create() {
       
   });
 
-  this.tubePoints = generateTubes(20,self.canvas.height-20,150,300,self.canvas.width+10); // adding commit tubes
+  this.tubePoints = generateTubes(20,self.canvas.height-20,250,300,self.canvas.width+10); // adding commit tubes
   this.game.addPhysicsTubes(this.tubePoints,this.physicsTubes);
 
   console.log(this.tubePoints) //this.tubePoints[20][0]
 
-  this.physics.world.setBounds(0, 0, this.tubePoints[19][0]+100, self.canvas.height);
+  this.physics.world.setBounds(0, 0, this.tubePoints[this.tubePoints.length-1][0]+100, self.canvas.height);
 
-  
+
   this.game.initialized = true;
   console.log('Lobby '+ this.roomID+ ' initialized!');
   this.hostSocket.emit('lobbyInitialized', this.roomID);
@@ -220,15 +228,36 @@ function create() {
 function update() {
   const self = this;
 
+  // END GAME crappy logic - fix this shit
+  // if (self.game.leaderboard.length === 0 ) {
+  //   console.log('game over');
+  //   self.game.endGame();
+  // }
   // Make sure game is started and initialized
   if (this.game.initialized && this.started) {
 
     try {
       self.physicsPlayers.getChildren().forEach( (player)=> {
+        // Check if player has got to finish line
+        if (player.x >= this.tubePoints[this.tubePoints.length-1][0]+10) {
+          console.log('Player ' + player.playerID + ' has reached the finish line!');
 
-        if (self.players[player.playerID]) {
+          // Remove player from game but keep in lobby
+          self.game.removePlayer(player.playerID);
 
+          // Tell the player they have won
+          io.to(player.ID).emit('playerWin');
+
+          // Send winners to clients
+          self.game.winners.push(self.players[player.playerID].nickname);
+          io.to(self.roomID).emit('winners', (self.game.winners));
+
+
+          
+        } else if (self.players[player.playerID]) {
+          
           const input = self.players[player.playerID].input;
+          
 
 
           player.setVelocityX(55); // Update players x velocity
@@ -239,19 +268,15 @@ function update() {
           
           self.players[player.playerID].x = player.x;
           self.players[player.playerID].y = player.y;
-          
-
-          if (player.x >= this.tubePoints[19][0]+10) {
-            console.log('You Won!');
-            io.to(self.roomID).emit('gameWon');
-          }
+   
         }
         self.physics.world.wrap(self.physicsPlayers, 5);
         io.to(self.roomID).emit('playerUpdates', self.players);
+
       });
     }
     catch (error) {
-      console.log('Players no longer exist')
+      console.log('Player no longer exist!')
     }
     
   }
