@@ -17,11 +17,11 @@ const datauri = new Datauri();
 const { JSDOM } = jsdom;
 
 
-app.use(express.static(__dirname + '/public'));
+// app.use(express.static(__dirname + '/public'));
 
-app.get('/', function (req, res) {
-  res.sendFile(__dirname + '/index.html');
-});
+// app.get('/', function (req, res) {
+//   res.sendFile(__dirname + '/index.html');
+// });
 
 
 
