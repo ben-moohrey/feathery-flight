@@ -45,6 +45,7 @@ class JoinLobby extends Phaser.Scene {
             }
             else if (code==='join-successful') {
                 self.okayToStart = true;
+                this.game.lobbyID = this.lobbyID;
                 self.scene.start('playGame');
             }
         });

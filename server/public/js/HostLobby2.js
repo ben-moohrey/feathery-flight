@@ -15,52 +15,40 @@ class HostLobby2 extends Phaser.Scene {
     }
 
     create() {
-        var scrollMode = 0; // 0:vertical, 1:horizontal
+        var scrollMode = 0;
         var gridTable = this.rexUI.add.gridTable({
             x: 400,
             y: 300,
             width: (scrollMode === 0) ? 300 : 420,
             height: (scrollMode === 0) ? 420 : 300,
-
             scrollMode: scrollMode,
-
             background: this.rexUI.add.roundRectangle(0, 0, 20, 10, 10, COLOR_PRIMARY),
-
             table: {
                 cellWidth: (scrollMode === 0) ? undefined : 60,
                 cellHeight: (scrollMode === 0) ? 60 : undefined,
-
                 columns: 1,
-
                 mask: {
                     padding: 2,
                 },
-
                 reuseCellContainer: true,
             },
-
             slider: {
                 track: this.rexUI.add.roundRectangle(0, 0, 20, 10, 10, COLOR_LIGHT),
                 thumb: this.rexUI.add.roundRectangle(0, 0, 0, 0, 13, COLOR_LIGHT),
-            },
-          
+            }, 
             mouseWheelScroller: {
                 focus: false,
                 speed: 0.1
             },
-
-            // edit this
             header: this.rexUI.add.label({
                 width: (scrollMode === 0) ? undefined : 30,
                 height: (scrollMode === 0) ? 40 : undefined,
                 align: 'center',
                 orientation: scrollMode,
                 background: this.rexUI.add.roundRectangle(0, 0, 20, 20, 0, COLOR_LIGHT),
-                text: this.add.text(0, 0, 'xxxxxx'),
+                text: this.add.text(0, 0, '123456'),
             }),
-
             footer: GetFooterSizer(this, scrollMode),
-
             space: {
                 left: 20,
                 right: 20,
@@ -98,9 +86,8 @@ class HostLobby2 extends Phaser.Scene {
                 } else {
                     console.log(cell.index + ': reuse cell-container');
                 }
-
                 // Set properties from item value
-                cellContainer.setMinSize(width, height); // Size might changed in this demo
+                cellContainer.setMinSize(width, height); 
                 cellContainer.getElement('text').setText(item.id); // Set text of text object
                 cellContainer.getElement('icon').setFillStyle(item.color); // Set fill color of round rectangle object
                 cellContainer.getElement('background').setStrokeStyle(2, COLOR_LIGHT).setDepth(0);
@@ -109,7 +96,6 @@ class HostLobby2 extends Phaser.Scene {
 
         })
             .layout()
-        //.drawBounds(this.add.graphics(), 0xff0000);
 
       
 
@@ -149,6 +135,7 @@ class HostLobby2 extends Phaser.Scene {
             }
             else if (code==='join-successful') {
                 self.okayToStart = true;
+                self.game.lobbyID = this.roomID;
                 // mainMenuDialog.emit('updateTitle',(roomID));
             }
         })
@@ -165,14 +152,6 @@ class HostLobby2 extends Phaser.Scene {
             gridTable.setItems(formattedLeaderboard);
         });
 
-
-
-
-
-
-
-
-      
     }
 
     update() { }

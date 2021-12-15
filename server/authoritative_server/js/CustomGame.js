@@ -27,6 +27,7 @@ class CustomGame extends Phaser.Game {
     this.players = {}
     this.leaderboard = [];
     this.winners = [];
+    this.gameTime = 20 * 1000; // Time in ms
   }
 
   // All function below refer to self as game object (Phaser advises against lols)
@@ -134,7 +135,8 @@ class CustomGame extends Phaser.Game {
     console.log('GAME ABOUT TO START');
 
     console.log('Countdown begin!');
-    timer(2);
+    timer(5);
+
     function timer (count) {
       let timer = setInterval(()=>{
         console.log(count)
@@ -145,6 +147,9 @@ class CustomGame extends Phaser.Game {
           currScene.countingDown = false;
           io.to(self.roomID).emit('gameData',currScene.players,currScene.tubePoints);
           currScene.physics.resume();
+          currScene.time.addEvent({delay:100,callback: () => {
+            self.gameTime -= 100;
+          }, callbackScope: self, loop: true});
         }
         count--;
       }, 1000);
@@ -239,9 +244,11 @@ function update() {
 
   // Make sure game is started and initialized
   if (this.game.initialized && this.started) {
-    // END GAME crappy logic - fix this shit
-    if (this.game.leaderboard.length === 0 ) {
+
+    // END GAME 
+    if (this.game.gameTime<=0 || this.game.leaderboard.length===0) {
       console.log('Game Over!');
+      io.to(this.roomID).emit('gameOver', (this.game.winners));
       this.game.endGame();
     }
 
@@ -251,11 +258,6 @@ function update() {
         if (player.x >= this.tubePoints[this.tubePoints.length-1][0]+10) {
           console.log('Player ' + player.playerID + ' has reached the finish line!');
 
-          
-
-          
-
-          
           this.game.winners.push(this.players[player.playerID].nickname);
 
           // Tell the player they have won
@@ -286,7 +288,7 @@ function update() {
           this.physics.world.wrap(this.physicsPlayers, 5);
 
           // Emit player updates to the players
-          io.to(this.roomID).emit('playerUpdates', this.players);
+          io.to(this.roomID).emit('playerUpdates', this.players,this.game.gameTime);
         }
         
 

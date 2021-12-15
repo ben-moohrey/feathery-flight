@@ -36,7 +36,7 @@ class JoinLobbyInput extends Phaser.Scene {
             })
             //.drawBounds(this.add.graphics(), 0xff0000);
             .popUp(500);
-      
+
         
     }
 
