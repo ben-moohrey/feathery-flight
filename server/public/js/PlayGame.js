@@ -69,14 +69,30 @@ class PlayGame extends Phaser.Scene {
         });
 
 
-        this.socket.on('playerWin', ()=> {
+        this.socket.on('playerWin', (winners)=> {
+            console.log('Attempting to move to next scene');
+
             
+
+            // Stop listening for gametime updates
+            this.socket.off('playerUpdates');
+            this.socket.off('gameData');
+            this.socket.off('playerDisconnect');
+            
+            self.game.winners = winners;
+            self.scene.start('leaderBoard');
+            self.scene.stop();
         });
 
-        this.socket.on('winners', (winners) => {
-            self.game.winners = winners;
-            console.log(self.game.winners);
-        });
+        // this.socket.on('winners', (winners)=>{
+        //     console.log('receiving winners');
+
+        // });
+
+        // this.socket.on('winners', (winners) => {
+        //     self.game.winners = winners;
+        //     console.log(self.game.winners);
+        // });
 
         this.cursors = this.input.keyboard.createCursorKeys();
         this.spaceKeyPressed = false;

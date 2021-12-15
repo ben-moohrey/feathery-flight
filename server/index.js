@@ -24,8 +24,6 @@ app.get('/', function (req, res) {
 });
 
 
-
-
 function setupAuthoritativePhaser() {
   JSDOM.fromFile(path.join(__dirname, 'authoritative_server/index.html'), {
     // To run the scripts in the html file

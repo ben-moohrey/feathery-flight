@@ -1,4 +1,3 @@
-
 const config = {
   type: Phaser.HEADLESS,
   parent: 'phaser-example',
@@ -48,7 +47,6 @@ class CustomGame extends Phaser.Game {
         jump: false
       },
       dead: false
-      
     }
 
     self.addPhysicsPlayer(self, currScene.players[socket.id]);
@@ -57,25 +55,33 @@ class CustomGame extends Phaser.Game {
     console.log(currScene.players)
   }
 
-  removePlayer(playerId) {
+  removePlayer(playerID) {
     var self = this;
     if(!self.initialized) return; 
     const currScene = this.scene.scenes[0];
-    delete currScene.players[playerId];
+
+    // Remove player from players object
+    delete currScene.players[playerID];
+
+    // Remove player from physics object
     currScene.physicsPlayers.getChildren().forEach((player) => {
-      if (playerId === player.playerId) {
+      if (playerID === player.playerID) {
         player.destroy();
       }
     });
     
-    
-
+    // Remove player from leaderboard object
     for(var i = 0; i < currScene.leaderboard.length; i++) {
-      if (currScene.leaderboard[i][0] === playerId) {
+      if (currScene.leaderboard[i][0] === playerID) {
         currScene.leaderboard.splice(i,1);
       }
     }
 
+    console.log('Player: ' +  playerID + ' has been removed from game: ' + this.roomID)
+
+    io.to(self.roomID).emit('playerDisconnect', playerID);
+    
+    console.log(currScene.physicsPlayers);
   }
 
   
@@ -128,7 +134,7 @@ class CustomGame extends Phaser.Game {
     console.log('GAME ABOUT TO START');
 
     console.log('Countdown begin!');
-    timer(5);
+    timer(2);
     function timer (count) {
       let timer = setInterval(()=>{
         console.log(count)
@@ -147,11 +153,13 @@ class CustomGame extends Phaser.Game {
 
   }
 
-  // endGame() {
-  //   this.render.destroy();
-  //   this.loop.stop();
-  //   this.canvas.remove();
-  // }
+  endGame() {
+    // Delete game
+    const ID = this.roomID;
+    games[ID].destroy(true,false);
+    games[ID] = null;
+    console.log('game should be deleted');
+  }
 
 
 }
@@ -178,14 +186,14 @@ function create() {
   this.leaderboard = this.game.leaderboard;
   this.players = this.game.players;
 
-  this.physics.world.setBounds( 0, 0, self.canvas.width*2, self.canvas.height);
+  this.physics.world.setBounds(0, 0, self.canvas.width*2, self.canvas.height);
 
 
   // Min: min value, max: max (y) value, spaceApart: distance between pipe openings
   // spaceApart: distance between sets of pipes
   function generateTubes(min,max,spaceBetween,spaceApart,startingPoint) {
     const tubes = [];
-    for (var i = 0; i < 10; i++) {
+    for (var i = 0; i < 1; i++) {
       var x = startingPoint + (i * spaceApart);
       var y1 = randomPosition(min,max-spaceBetween);
       var y2 = y1 + spaceBetween;
@@ -218,71 +226,82 @@ function create() {
   this.physics.world.setBounds(0, 0, this.tubePoints[this.tubePoints.length-1][0]+100, self.canvas.height);
 
 
+
+  
   this.game.initialized = true;
   console.log('Lobby '+ this.roomID+ ' initialized!');
   this.hostSocket.emit('lobbyInitialized', this.roomID);
-
 }
 
 
+// 
 function update() {
-  const self = this;
 
-  // END GAME crappy logic - fix this shit
-  // if (self.game.leaderboard.length === 0 ) {
-  //   console.log('game over');
-  //   self.game.endGame();
-  // }
   // Make sure game is started and initialized
   if (this.game.initialized && this.started) {
+    // END GAME crappy logic - fix this shit
+    if (this.game.leaderboard.length === 0 ) {
+      console.log('Game Over!');
+      this.game.endGame();
+    }
 
-    try {
-      self.physicsPlayers.getChildren().forEach( (player)=> {
+    //try {
+      this.physicsPlayers.getChildren().forEach( (player)=> {
         // Check if player has got to finish line
         if (player.x >= this.tubePoints[this.tubePoints.length-1][0]+10) {
           console.log('Player ' + player.playerID + ' has reached the finish line!');
 
-          // Remove player from game but keep in lobby
-          self.game.removePlayer(player.playerID);
+          
+
+          
+
+          
+          this.game.winners.push(this.players[player.playerID].nickname);
 
           // Tell the player they have won
-          io.to(player.ID).emit('playerWin');
+          io.to(player.playerID).emit('playerWin', (this.game.winners));
 
           // Send winners to clients
-          self.game.winners.push(self.players[player.playerID].nickname);
-          io.to(self.roomID).emit('winners', (self.game.winners));
+          io.to(this.roomID).emit('winners', (this.game.winners));
 
+          // Remove player from game but keep in lobby
+          this.game.removePlayer(player.playerID);
 
-          
-        } else if (self.players[player.playerID]) {
-          
-          const input = self.players[player.playerID].input;
-          
+        } else if (this.players[player.playerID]) {
 
-
-          player.setVelocityX(55); // Update players x velocity
+          const input = this.players[player.playerID].input;
+        
+          // Update Player Movement
+          player.setVelocityX(55);
           if(input.jump) {
             player.setVelocityY( -300 );
           }
           input.jump = false;
           
-          self.players[player.playerID].x = player.x;
-          self.players[player.playerID].y = player.y;
-   
+          // Update players object
+          this.players[player.playerID].x = player.x;
+          this.players[player.playerID].y = player.y;
+
+          // Wrap physics world (so you can fall through the ground and end up at the top)
+          this.physics.world.wrap(this.physicsPlayers, 5);
+
+          // Emit player updates to the players
+          io.to(this.roomID).emit('playerUpdates', this.players);
         }
-        self.physics.world.wrap(self.physicsPlayers, 5);
-        io.to(self.roomID).emit('playerUpdates', self.players);
+        
 
       });
-    }
-    catch (error) {
-      console.log('Player no longer exist!')
-    }
+    // }
+    // catch (error) {
+    //   console.log('Player no longer exist!')
+    // }
     
   }
   
 
 }
+
+
 
 
 

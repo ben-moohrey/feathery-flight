@@ -9,6 +9,7 @@ const ROOM_CAPACITY = 20; // Max users in room
 const ROOM_TIMEOUT = 100; // Room timeout in secconds
 
 
+
 io.on("connection", socket => {
     
     const self = this;
@@ -77,13 +78,15 @@ io.on("connection", socket => {
         
     }
 
-    socket.on('startGameLobby', () => {
-        // Check if user is host
-        if(self.hostSocketID !== socket.id) { return; }
-        // Check that room exists (should definately exist)
+    socket.on('startGameLobby', () => { 
+        // Check that room exists
         if (!games[clientRooms[socket.id]]) { return; }
 
         game = games[clientRooms[socket.id]];
+
+        // Check if user is host
+        if(game.hostSocket.id !== socket.id) { return; }
+
         console.log('GAME STARTING');
 
         // Tell all players waiting in lobby that game is about to start
@@ -91,16 +94,11 @@ io.on("connection", socket => {
         
         // start game
         game.startGame();
-
-        
-
-
     });
 
     socket.on('playerInput', function(inputData) {
         // TODO: check if game has begun 
         if (!clientRooms[socket.id]) { return; }
-        console.log('Player Trying To Move');
         var localRoomName = clientRooms[socket.id];
 
         handlePlayerInput(self, socket.id, inputData, localRoomName);
@@ -119,6 +117,8 @@ io.on("connection", socket => {
                 game.scene.scenes[0].players[player.playerID].input = input;
             }
         });
+
+        
     }
 
     socket.on('disconnect', () => {
@@ -127,22 +127,27 @@ io.on("connection", socket => {
         if (game) {
             game.removePlayer(socket.id);
 
-            io.to(clientRooms[socket.id]).emit('updateLeaderBoard', game.scene.scenes[0].leaderboard);
-            io.to(clientRooms[socket.id]).emit('playerDisconnect',socket.id);
+            io.to(clientRooms[socket.id]).emit('updateLeaderBoard', game.scene.scenes[0].leaderboard); // only really used on lobby in client
+
+            
             
             console.log(game.scene.scenes[0].players);
             console.log(game.players);
+
+            // Depreciated: game deletes itself!
             // Check if room is empty and if it is begin timer to delete
-            if (!io.sockets.adapter.rooms.get(clientRooms[socket.id])) {
-                console.log('Lobby '+ clientRooms[socket.id] + ' empty... beginning shutdowm timer');
-                var localRoomID = clientRooms[socket.id];
-                setTimeout( ()=> {   
-                    console.log('DELETING LOBBY: ' + localRoomID);
-                    if (!io.sockets.adapter.rooms.get(clientRooms[socket.id])) {
-                        delete games[localRoomID];
-                    }
-                },ROOM_TIMEOUT * 1000)
-            }
+            // if (!io.sockets.adapter.rooms.get(clientRooms[socket.id])) {
+            //     console.log('Lobby '+ clientRooms[socket.id] + ' empty... beginning shutdowm timer');
+            //     var localRoomID = clientRooms[socket.id];
+            //     setTimeout( ()=> {   
+            //         console.log('DELETING LOBBY: ' + localRoomID);
+            //         if (!io.sockets.adapter.rooms.get(clientRooms[socket.id])) {
+
+            //             // TODO: ADD STOP GAME FUNCTION ** ** ** * ** * * ** * ** 
+            //             games[localRoomID].endGame();
+            //         }
+            //     },ROOM_TIMEOUT * 1000)
+            // }
 
             delete clientRooms[socket.id];
         }

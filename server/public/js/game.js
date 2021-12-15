@@ -7,7 +7,7 @@ var config = {
     width: 800,
     height: 600,
     backgroundColor: '#35adf2',
-    scene: [MainMenu, HostLobby, HostLobby2, JoinLobbyInput, JoinLobby, PlayGame]
+    scene: [MainMenu, HostLobby, HostLobby2, JoinLobbyInput, JoinLobby, PlayGame, LeaderBoard]
   };
 
   var game = new Phaser.Game(config);

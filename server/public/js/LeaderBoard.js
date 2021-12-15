@@ -1,9 +1,9 @@
 
 
 
-class HostLobby2 extends Phaser.Scene {
+class LeaderBoard extends Phaser.Scene {
     constructor() {
-        super('hostLobby2')
+        super('leaderBoard')
     }
 
     preload() { 
@@ -56,10 +56,10 @@ class HostLobby2 extends Phaser.Scene {
                 align: 'center',
                 orientation: scrollMode,
                 background: this.rexUI.add.roundRectangle(0, 0, 20, 20, 0, COLOR_LIGHT),
-                text: this.add.text(0, 0, 'xxxxxx'),
+                text: this.add.text(0, 0, 'Leaderboard'),
             }),
 
-            footer: GetFooterSizer(this, scrollMode),
+            footer: GetFooterSizer2(this, scrollMode),
 
             space: {
                 left: 20,
@@ -111,91 +111,49 @@ class HostLobby2 extends Phaser.Scene {
             .layout()
         //.drawBounds(this.add.graphics(), 0xff0000);
 
-      
+        
 
-
-
-
-
-        var self = this; 
-
-        // Connect to server
-        this.game.socket = io();
         this.socket = this.game.socket;
-        console.log("Connected to Server");
+        
+        // Set leaderboard from last scene
+        var winners = self.game.winners;
+        console.log('WINNERS');
+        console.log(winners);
+        var formattedLeaderboard = [{id: winners[0], color: 0xffffff}]
+        for (var i = 1; i < winners.length; i++) {
+            formattedLeaderboard.push({id:winners[i], color: 0xffffff})
+        }
+        gridTable.setItems(formattedLeaderboard);
 
-        // Get nickname from mainMenu scene
-        this.nickname = this.scene.get('mainMenu').nickname;
-
-        // Connect to lobby
-        this.socket.emit('createNewLobby');
-        this.socket.on('lobbyInitialized', (iD) => {
-            this.roomID = iD;
-            console.log("roomID:"+iD);
-            this.socket.emit('joinGame',this.roomID,this.nickname);
-            gridTable.getElement('header').getElement('text').setText(this.roomID);
-        })
-
-        // Join lobby status
-        this.socket.on('joinLobbyStatus', (roomID,code)=> {
-            if (code==='room-full') {
-                // TODO: Handle full room
-            }
-            else if (code==='not-a-room') {
-                // TODO: Handle not a room
-            }
-            else if (code==='game-begun') {
-                // TODO: Handle game-begun
-            }
-            else if (code==='join-successful') {
-                self.okayToStart = true;
-                // mainMenuDialog.emit('updateTitle',(roomID));
-            }
-        })
- 
         // Update leaderboard
-        this.socket.on('updateLeaderBoard', (leaderboard) => {
-            console.log('Leaderboard update');
+        this.socket.on('winners', (leaderboard) => {
+            console.log('Leaderboard Update');
             console.log(leaderboard);
 
-            var formattedLeaderboard = [{id: leaderboard[0][1], color: 0xffffff}]
+            formattedLeaderboard = [{id: leaderboard[0], color: 0xffffff}]
             for (var i = 1; i < leaderboard.length; i++) {
-                formattedLeaderboard.push({id:leaderboard[i][1], color: 0xffffff})
+                formattedLeaderboard.push({id:leaderboard[i], color: 0xffffff})
             }
             gridTable.setItems(formattedLeaderboard);
         });
-
-
-
-
-
-
-
-
-      
     }
 
     update() { }
 }
 
 
-var GetFooterSizer = function (scene, orientation) {
+var GetFooterSizer2 = function (scene, orientation) {
     return scene.rexUI.add.sizer({
         orientation: orientation
     })
         .add(
-            createBackButton(scene, 'Back', orientation),   // child
-            1,         // proportion
-            'center'   // align
-        )
-        .add(
-            createStartGameButton(scene, 'Start Game', orientation),    // child
+            createQuitButton(scene, 'Quit', orientation),   // child
             1,         // proportion
             'center'   // align
         )
 }
 
-var createBackButton = function (scene, text, orientation) {
+var createQuitButton = function (scene, text, orientation) {
     return scene.rexUI.add.label({
         height: (orientation === 0) ? 40 : undefined,
         width: (orientation === 0) ? undefined : 40,
@@ -212,28 +170,6 @@ var createBackButton = function (scene, text, orientation) {
             console.log(`About to do action: ${text}`);
             if(scene.socket){scene.socket.disconnect();}
             scene.scene.start('mainMenu');
-
         })
 }
 
-var createStartGameButton = function (scene, text, orientation) {
-    return scene.rexUI.add.label({
-        height: (orientation === 0) ? 40 : undefined,
-        width: (orientation === 0) ? undefined : 40,
-        orientation: orientation,
-        background: scene.rexUI.add.roundRectangle(0, 0, 2, 2, 20, COLOR_LIGHT),
-        text: scene.add.text(0, 0, text),
-        align: 'center',
-        space: {           
-            icon: 10
-        }
-    })
-        .setInteractive()
-        .on('pointerdown', function () {
-            console.log(`About to do action: ${text}`);
-            if(scene.socket && scene.okayToStart){
-                scene.socket.emit('startGameLobby');
-                scene.scene.start('playGame');
-            }
-        })
-}
