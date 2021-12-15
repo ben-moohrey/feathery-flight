@@ -27,7 +27,7 @@ class CustomGame extends Phaser.Game {
     this.players = {}
     this.leaderboard = [];
     this.winners = [];
-    this.gameTime = 20 * 1000; // Time in ms
+    this.gameTime = 100 * 1000; // Time in ms
   }
 
   // All function below refer to self as game object (Phaser advises against lols)
@@ -198,7 +198,7 @@ function create() {
   // spaceApart: distance between sets of pipes
   function generateTubes(min,max,spaceBetween,spaceApart,startingPoint) {
     const tubes = [];
-    for (var i = 0; i < 1; i++) {
+    for (var i = 0; i < 10; i++) {
       var x = startingPoint + (i * spaceApart);
       var y1 = randomPosition(min,max-spaceBetween);
       var y2 = y1 + spaceBetween;
