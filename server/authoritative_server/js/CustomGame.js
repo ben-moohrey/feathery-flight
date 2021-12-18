@@ -51,7 +51,6 @@ class CustomGame extends Phaser.Game {
     }
 
     self.addPhysicsPlayer(self, currScene.players[socket.id]);
-
     console.log('-Current players-')
     console.log(currScene.players)
   }
@@ -143,17 +142,21 @@ class CustomGame extends Phaser.Game {
       let timer = setInterval(()=>{
         console.log(count)
         io.to(self.roomID).emit('countdown',count);
-        if(count==0) { 
-          clearInterval(timer); 
-          currScene.started = true;
-          currScene.countingDown = false;
-          io.to(self.roomID).emit('gameData',currScene.players,currScene.tubePoints);
-          currScene.physics.resume();
+        if(count==0 && currScene) { 
+          try {
+            clearInterval(timer); 
+            currScene.started = true;
+            currScene.countingDown = false;
+            io.to(self.roomID).emit('gameData',currScene.players,currScene.tubePoints);
+            currScene.physics.resume();
 
-          // Start game timer
-          currScene.time.addEvent({delay:100,callback: () => {
-            self.gameTime -= 100;
-          }, callbackScope: self, loop: true});
+            // Start game timer
+            currScene.time.addEvent({delay:100,callback: () => {
+              self.gameTime -= 100;
+            }, callbackScope: self, loop: true});
+          } catch(error) {
+            console.log('Game has been deleted');
+          }
         }
         count--;
       }, 1000);
@@ -182,7 +185,7 @@ function preload() {
 function create() {
   const self = this;
   this.started = false;
-  this.physics.pause();
+  this.physics.pause(); // pause physics
 
   // Pass in (game) variable to the (Scene) instance
   this.hostSocket = this.game.hostSocket;
@@ -288,10 +291,3 @@ function update() {
     });  
   }
 }
-
-
-
-
-
-
-
