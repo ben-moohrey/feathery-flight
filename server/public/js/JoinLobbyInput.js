@@ -15,16 +15,16 @@ class JoinLobbyInput extends Phaser.Scene {
     }
 
     create() {
-
+        
         var self = this;
         var print = this.add.text(0, 0, '');
         // loginDialog
-       var mainMenuDialog = CreateMainMenuDialog2(this, {
-            x: 400,
-            y: 300,
-            title: 'Enter a lobby ID',
-            username: '',
-        })
+        var mainMenuDialog = CreateLobbyInputDialog(this, {
+                x: 400,
+                y: 300,
+                title: 'Enter a lobby ID',
+                username: '',
+            })
             .on('joinLobby', function (lobbyID) {
                 console.log(lobbyID);
                 self.lobbyID = lobbyID;
@@ -36,15 +36,12 @@ class JoinLobbyInput extends Phaser.Scene {
             })
             //.drawBounds(this.add.graphics(), 0xff0000);
             .popUp(500);
-
-        
     }
-
     update() { }
 }
 
 
-var CreateMainMenuDialog2 = function (scene, config, onSubmit) {
+var CreateLobbyInputDialog = function (scene, config, onSubmit) {
     var username = GetValue(config, 'username', '');
     // var password = GetValue(config, 'password', '');
     var title = GetValue(config, 'title', 'Welcome');

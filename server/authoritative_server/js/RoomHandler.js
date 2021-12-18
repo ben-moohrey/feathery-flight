@@ -11,31 +11,34 @@ const ROOM_TIMEOUT = 100; // Room timeout in secconds
 
 
 io.on("connection", socket => {
-    
-    const self = this;
-    console.log('a user connected to server');
+    const self = this; // Create reference to this
+    console.log('User: '+ socket.id +' connected to server'); // Log new socket connection
 
     socket.on('createNewLobby', handleNewLobby);
     socket.on('joinGame', handleJoinGame);
 
+
+    // Function to handle creation of new game lobby
     function handleNewLobby() {
-        console.log("Handling new game");
-        self.hostSocketID = socket.id;
+        console.log("Spawing a new game!");
         let roomID = makeid(6); 
 
-        // Check if roomID already exists
+        // Create a new roomID (that doesnt already exist)
         while (roomID in games) {
             roomID = makeid(6);
         }
         
-        // Spawn a new (headless) phaser instance. 
+        // Spawn a new (headless) phaser instance.  (config file, roomID, hostSocket)
         games[roomID] = new CustomGame(config,roomID,socket); 
+        console.log(games);
     }
 
   
-
+    // Function to handle a new user trying to join a specific game lobby
     function handleJoinGame(roomID,nickname) {
-        console.log(socket.id+' attemping to join lobby: '+roomID);
+        console.log(socket.id+' attemping to join lobby: ' + roomID);
+
+        // Make sure game exists
         var game = games[roomID];
         if (!game) {
             console.log('Lobby' + roomID +' does not exist!');
@@ -43,18 +46,19 @@ io.on("connection", socket => {
             return;
         }
 
-        // TODO: check for bad username
-        clientRooms[socket.id] = roomID;
-        socket.join(roomID);
+        // Get room 
         const room = io.sockets.adapter.rooms.get(roomID);
 
-        // Check if full 
-        if(room.size>ROOM_CAPACITY) {
+        // Check if the room is full 
+        if(room && room.size>ROOM_CAPACITY) {
             console.log('Lobby' + roomID +' is full! :(');
-            socket.leave(roomID);
             socket.emit('joinLobbyStatus',roomID,'room-full');
             return;
         }
+
+        // Join room
+        clientRooms[socket.id] = roomID;
+        socket.join(roomID);
 
         // Check if game has already been started
         if(game.scene.scenes[0].started) {
@@ -64,8 +68,7 @@ io.on("connection", socket => {
             return;
         }
 
-
-        // OKAY TO JOIN 
+        // JOIN SUCCESS
 
         // emit join success
         game.addPlayer(socket,nickname);
@@ -73,16 +76,18 @@ io.on("connection", socket => {
         // Send updated leaderboard to room
         io.to(roomID).emit('updateLeaderBoard', game.scene.scenes[0].leaderboard); // game.scene.scene[0].players
 
-        console.log('User: '+ socket.id +' done joining');
+        // Completely done joining
         socket.emit('joinLobbyStatus', roomID, 'join-successful');
         
     }
 
+
+    // Listener that waits for start game responses from the hosts of games
     socket.on('startGameLobby', () => { 
         // Check that room exists
         if (!games[clientRooms[socket.id]]) { return; }
 
-        game = games[clientRooms[socket.id]];
+        var game = games[clientRooms[socket.id]];
 
         // Check if user is host
         if(game.hostSocket.id !== socket.id) { return; }
@@ -96,8 +101,9 @@ io.on("connection", socket => {
         game.startGame();
     });
 
+
+    // Listener for player input
     socket.on('playerInput', function(inputData) {
-        // TODO: check if game has begun 
         if (!clientRooms[socket.id]) { return; }
         var localRoomName = clientRooms[socket.id];
 
@@ -105,58 +111,36 @@ io.on("connection", socket => {
     });
 
   
-
+    // Helper function for playerInput listener
     function handlePlayerInput(self, playerID, input, rn) {
+        // Get game (rn = roomName/roomID)
         if (!games[rn]) { return; }
         var game = games[rn];
 
-        // check if player has been removed from game
+        // Check if player has been removed from game
         if (!game.players[playerID]) {return; }
         game.scene.scenes[0].physicsPlayers.getChildren().forEach((player) => {
             if (playerID === player.playerID) {
                 game.scene.scenes[0].players[player.playerID].input = input;
             }
         });
-
-        
     }
 
+    // Listener for socket disconnect
     socket.on('disconnect', () => {
         console.log(socket.id + ' disconnected');
         var game = games[clientRooms[socket.id]];
         if (game) {
-            game.removePlayer(socket.id);
+            game.removePlayer(socket.id); // Remove player from serverside game
+            io.to(clientRooms[socket.id]).emit('updateLeaderBoard', game.scene.scenes[0].leaderboard); // Send list of players (leaderboard) to client room
+            console.log(game.players); // Log the players
+            delete clientRooms[socket.id]; // Delete the room-client reference from clientRooms
 
-            io.to(clientRooms[socket.id]).emit('updateLeaderBoard', game.scene.scenes[0].leaderboard); // only really used on lobby in client
-
-            
-            
-            console.log(game.scene.scenes[0].players);
-            console.log(game.players);
-
-            // Depreciated: game deletes itself!
-            // Check if room is empty and if it is begin timer to delete
-            // if (!io.sockets.adapter.rooms.get(clientRooms[socket.id])) {
-            //     console.log('Lobby '+ clientRooms[socket.id] + ' empty... beginning shutdowm timer');
-            //     var localRoomID = clientRooms[socket.id];
-            //     setTimeout( ()=> {   
-            //         console.log('DELETING LOBBY: ' + localRoomID);
-            //         if (!io.sockets.adapter.rooms.get(clientRooms[socket.id])) {
-
-            //             // TODO: ADD STOP GAME FUNCTION ** ** ** * ** * * ** * ** 
-            //             games[localRoomID].endGame();
-            //         }
-            //     },ROOM_TIMEOUT * 1000)
-            // }
-
-            delete clientRooms[socket.id];
+            if (game.leaderboard<=0) {
+                game.endGame();
+                return;
+            }
         }
-        
     });
-    
-
-    
-
-
 });
 

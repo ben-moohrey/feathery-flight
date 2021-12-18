@@ -9,6 +9,8 @@ class PlayGame extends Phaser.Scene {
         this.load.image('bird', 'assets/bird.png');
         this.load.image('bg', 'assets/background.png');
         this.load.audio('winSound','assets/audio/win.mp3');
+        this.load.audio('song2','assets/audio/song2.mp3');
+
         this.cameras.main.setBounds(0, 0, this.game.canvas.width*10, this.game.canvas.height);
 
         
@@ -22,7 +24,7 @@ class PlayGame extends Phaser.Scene {
         var self = this;
         this.players = this.add.group();
         this.tubes = this.add.group();
-
+        this.sound.play('song2');
         const style = { font: "bold 100px Arial", fill: "#fff" };
         const style2 = { font: "bold 60px Arial", fill: "#fff" };
         this.preGameTimerText = this.add.text(self.game.canvas.width/2,self.game.canvas.height/2,'',style).setOrigin(.5,.5);
@@ -48,14 +50,15 @@ class PlayGame extends Phaser.Scene {
 
             // Display game timer
             self.gameTimeText.visible = true;
+
+            // Hide lobbyID text
             self.lobbyIDText.visible = false;
 
         });
 
-
+        // listener for playerUpdates
         this.socket.on('playerUpdates', function (players,gameTime) {
             Object.keys(players).forEach(function (id) {
-                
                 self.players.getChildren().forEach(function (player) {
                     if (players[id].playerID === player.playerID) {
                         player.setRotation(players[id].rotation);
@@ -64,9 +67,11 @@ class PlayGame extends Phaser.Scene {
                 });
             });
 
+            // Update game timer
             self.updateTimer(self,gameTime);
         });
 
+        // Delete player when they disconnect from game
         this.socket.on('playerDisconnect', (playerID) => {
             self.players.getChildren().forEach(function (player) {
                 if (playerID === player.playerID) {
@@ -75,7 +80,7 @@ class PlayGame extends Phaser.Scene {
             });
         });
 
-
+        // Countdown listener. Displays countdown timer before game starts
         this.socket.on('countdown', (num) => {
             if(num===0) {
                 self.preGameTimerText.setText('Go!!');
@@ -95,6 +100,7 @@ class PlayGame extends Phaser.Scene {
             self.scene.stop();
         });
 
+        // Player has won
         this.socket.on('playerWin', (winners)=> {
             console.log('User has reached the finish line: attempting to move to next scene');
 
@@ -112,22 +118,13 @@ class PlayGame extends Phaser.Scene {
         });
 
         
-
-        // this.socket.on('winners', (winners)=>{
-        //     console.log('receiving winners');
-
-        // });
-
-        // this.socket.on('winners', (winners) => {
-        //     self.game.winners = winners;
-        //     console.log(self.game.winners);
-        // });
-
+        // Get game cursors
         this.cursors = this.input.keyboard.createCursorKeys();
         this.spaceKeyPressed = false;
         
     }
 
+    // Update function (mostly checking for game input)
     update() {
         const up = this.spaceKeyPressed;
         if (this.cursors.up.isDown) {
@@ -142,6 +139,7 @@ class PlayGame extends Phaser.Scene {
         }
     }
 
+    // Update game timer
     updateTimer(self, gameTime) {
         console.log(gameTime);
 
@@ -157,11 +155,9 @@ class PlayGame extends Phaser.Scene {
         if (self.userPlayer) {
             self.gameTimeText.setX(self.userPlayer.x);
         }
-        
-        
-        // self.gameTimeText.setText('bruh');
-        // self.gameTimeText.setText('bruh');
     }
+
+    // Function to render players when game starts
     displayPlayers(self, playerInfo, sprite, visible) {
         const player = self.add.sprite(playerInfo.x, playerInfo.y, sprite).setOrigin(0.5, 0.5).setDisplaySize(53, 40);
         if (!visible) {
@@ -175,6 +171,8 @@ class PlayGame extends Phaser.Scene {
         self.players.add(player);
         
     }
+
+    // Function to render obstacles when game starts
     displayTubes(self, tubePoints) {
         for(var i = 0; i < tubePoints.length; i++) {
             var multipoint = tubePoints[i];

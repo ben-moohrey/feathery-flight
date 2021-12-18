@@ -21,34 +21,25 @@ class LeaderBoard extends Phaser.Scene {
             y: 300,
             width: (scrollMode === 0) ? 300 : 420,
             height: (scrollMode === 0) ? 420 : 300,
-
             scrollMode: scrollMode,
-
             background: this.rexUI.add.roundRectangle(0, 0, 20, 10, 10, COLOR_PRIMARY),
-
             table: {
                 cellWidth: (scrollMode === 0) ? undefined : 60,
                 cellHeight: (scrollMode === 0) ? 60 : undefined,
-
                 columns: 1,
-
                 mask: {
                     padding: 2,
                 },
-
                 reuseCellContainer: true,
             },
-
             slider: {
                 track: this.rexUI.add.roundRectangle(0, 0, 20, 10, 10, COLOR_LIGHT),
                 thumb: this.rexUI.add.roundRectangle(0, 0, 0, 0, 13, COLOR_LIGHT),
-            },
-          
+            }, 
             mouseWheelScroller: {
                 focus: false,
                 speed: 0.1
             },
-
             // edit this
             header: this.rexUI.add.label({
                 width: (scrollMode === 0) ? undefined : 30,
@@ -109,23 +100,24 @@ class LeaderBoard extends Phaser.Scene {
 
         })
             .layout()
-        //.drawBounds(this.add.graphics(), 0xff0000);
 
         
-
+        // Get socket from previous scene
         this.socket = this.game.socket;
         
         // Set leaderboard from last scene
         var winners = self.game.winners;
         console.log('WINNERS');
         console.log(winners);
+
+        // Output leaderboard to screen
         var formattedLeaderboard = [{id: winners[0], color: 0xffffff}]
         for (var i = 1; i < winners.length; i++) {
             formattedLeaderboard.push({id:winners[i], color: 0xffffff})
         }
         gridTable.setItems(formattedLeaderboard);
 
-        // Update leaderboard
+        // Listener to Update leaderboard when a player reaches the finish line
         this.socket.on('winners', (leaderboard) => {
             console.log('Leaderboard Update');
             console.log(leaderboard);

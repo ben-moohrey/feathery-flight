@@ -30,16 +30,19 @@ class JoinLobby extends Phaser.Scene {
         this.socket.on('joinLobbyStatus', (roomID,code)=> {
             if (code==='room-full') {
                 // TODO: Handle full room
+                console.log('Room if full');
                 this.socket.disconnect();
                 self.scene.start('joinLobbyInput');
             }
             else if (code==='not-a-room') {
                 // TODO: Handle not a room
+                console.log('Room doesnt exist');
                 this.socket.disconnect();
                 self.scene.start('joinLobbyInput');
             }
             else if (code==='game-begun') {
                 // TODO: Handle game-begun
+                console.log('Game already begun');
                 this.socket.disconnect();
                 self.scene.start('joinLobbyInput');
             }
@@ -56,11 +59,6 @@ class JoinLobby extends Phaser.Scene {
             console.log('Leaderboard update');
             console.log(leaderboard);
         });
-        
-        // this.socket.on('gameStartingNow', () => {
-        //     self.scene.start('playGame');
-        // })
-
     }
 }
 

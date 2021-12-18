@@ -36,7 +36,7 @@ class MainMenu extends Phaser.Scene {
                 console.log(username);
                 self.nickname = username=='nickname' ? 'player' : username;
             
-                self.scene.start('hostLobby2');
+                self.scene.start('hostLobby');
             })
             .on('joinLobby', function (username) {
                 console.log(username);

@@ -56,10 +56,11 @@ class CustomGame extends Phaser.Game {
     console.log(currScene.players)
   }
 
+  // Function for removing players
   removePlayer(playerID) {
     var self = this;
     if(!self.initialized) return; 
-    const currScene = this.scene.scenes[0];
+    const currScene = this.scene.scenes[0]; // Get current scene
 
     // Remove player from players object
     delete currScene.players[playerID];
@@ -80,13 +81,11 @@ class CustomGame extends Phaser.Game {
 
     console.log('Player: ' +  playerID + ' has been removed from game: ' + this.roomID)
 
-    io.to(self.roomID).emit('playerDisconnect', playerID);
-    
-    console.log(currScene.physicsPlayers);
+    io.to(self.roomID).emit('playerDisconnect', playerID); // Tell room of player disconnect so they can stop rendering them
   }
 
   
-
+  // Adds a new player object to the physicsPlayers object
   addPhysicsPlayer(self, playerInfo) {
     var self = this;
     if(!self.initialized) return;
@@ -101,6 +100,7 @@ class CustomGame extends Phaser.Game {
 
   }
 
+  // Adds the obstacles to the scene
   addPhysicsTubes(tubePoints, physicsObj) {
     var self = this;
     var currScene = this.scene.scenes[0];
@@ -120,6 +120,7 @@ class CustomGame extends Phaser.Game {
     }
   }
 
+  // Function for starting the game
   startGame() {
     var self = this;
     console.log('Game attempting to start');
@@ -135,8 +136,9 @@ class CustomGame extends Phaser.Game {
     console.log('GAME ABOUT TO START');
 
     console.log('Countdown begin!');
-    timer(5);
 
+    // Countdown timer
+    timer(5);
     function timer (count) {
       let timer = setInterval(()=>{
         console.log(count)
@@ -147,6 +149,8 @@ class CustomGame extends Phaser.Game {
           currScene.countingDown = false;
           io.to(self.roomID).emit('gameData',currScene.players,currScene.tubePoints);
           currScene.physics.resume();
+
+          // Start game timer
           currScene.time.addEvent({delay:100,callback: () => {
             self.gameTime -= 100;
           }, callbackScope: self, loop: true});
@@ -158,15 +162,16 @@ class CustomGame extends Phaser.Game {
 
   }
 
+
+  // Once game finishes this method is called to delete itself.
   endGame() {
     // Delete game
+    console.log('Deleteing game '+ this.roomID);
     const ID = this.roomID;
     games[ID].destroy(true,false);
     games[ID] = null;
-    console.log('game should be deleted');
+    delete games[ID];
   }
-
-
 }
 
 function preload() {
@@ -178,7 +183,6 @@ function create() {
   const self = this;
   this.started = false;
   this.physics.pause();
-  console.log('New game lobby being created')
 
   // Pass in (game) variable to the (Scene) instance
   this.hostSocket = this.game.hostSocket;
@@ -206,40 +210,32 @@ function create() {
     }
     return tubes;
   }
+
+  // Helper to get random value from min to max
   function randomPosition(min,max) {
     return Math.floor(Math.random() * max) + min;
   }
 
   
-
+  // Obstacle and player physics collider
   this.physics.add.collider(this.physicsPlayers, this.physicsTubes, function (player, obstacle) {
-    console.log('You hit a tube');
-
     player.x = self.game.canvas.width/2;
     player.y = self.game.canvas.height/2;
     self.players[player.playerID].x = self.game.canvas.width/2;
-    self.players[player.playerID].y = self.game.canvas.height/2;
-
-      
+    self.players[player.playerID].y = self.game.canvas.height/2;  
   });
 
   this.tubePoints = generateTubes(20,self.canvas.height-20,250,300,self.canvas.width+10); // adding commit tubes
   this.game.addPhysicsTubes(this.tubePoints,this.physicsTubes);
 
-  console.log(this.tubePoints) //this.tubePoints[20][0]
-
   this.physics.world.setBounds(0, 0, this.tubePoints[this.tubePoints.length-1][0]+100, self.canvas.height);
 
-
-
-  
   this.game.initialized = true;
   console.log('Lobby '+ this.roomID+ ' initialized!');
-  this.hostSocket.emit('lobbyInitialized', this.roomID);
+  this.hostSocket.emit('lobbyInitialized', this.roomID); // Tell the host that the lobby is ready to join
 }
 
 
-// 
 function update() {
 
   // Make sure game is started and initialized
@@ -252,55 +248,45 @@ function update() {
       this.game.endGame();
     }
 
-    //try {
-      this.physicsPlayers.getChildren().forEach( (player)=> {
-        // Check if player has got to finish line
-        if (player.x >= this.tubePoints[this.tubePoints.length-1][0]+10) {
-          console.log('Player ' + player.playerID + ' has reached the finish line!');
+    this.physicsPlayers.getChildren().forEach( (player)=> {
+      // Check if player has got to finish line
+      if (player.x >= this.tubePoints[this.tubePoints.length-1][0]+10) {
+        console.log('Player ' + player.playerID + ' has reached the finish line!');
 
-          this.game.winners.push(this.players[player.playerID].nickname);
+        this.game.winners.push(this.players[player.playerID].nickname);
 
-          // Tell the player they have won
-          io.to(player.playerID).emit('playerWin', (this.game.winners));
+        // Tell the player they have won
+        io.to(player.playerID).emit('playerWin', (this.game.winners));
 
-          // Send winners to clients
-          io.to(this.roomID).emit('winners', (this.game.winners));
+        // Send winners to clients
+        io.to(this.roomID).emit('winners', (this.game.winners));
 
-          // Remove player from game but keep in lobby
-          this.game.removePlayer(player.playerID);
+        // Remove player from game but keep in lobby
+        this.game.removePlayer(player.playerID);
 
-        } else if (this.players[player.playerID]) {
+      } else if (this.players[player.playerID]) {
 
-          const input = this.players[player.playerID].input;
-        
-          // Update Player Movement
-          player.setVelocityX(55);
-          if(input.jump) {
-            player.setVelocityY( -300 );
-          }
-          input.jump = false;
-          
-          // Update players object
-          this.players[player.playerID].x = player.x;
-          this.players[player.playerID].y = player.y;
-
-          // Wrap physics world (so you can fall through the ground and end up at the top)
-          this.physics.world.wrap(this.physicsPlayers, 5);
-
-          // Emit player updates to the players
-          io.to(this.roomID).emit('playerUpdates', this.players,this.game.gameTime);
+        const input = this.players[player.playerID].input;
+      
+        // Update Player Movement
+        player.setVelocityX(55);
+        if(input.jump) {
+          player.setVelocityY( -275 );
         }
+        input.jump = false;
         
+        // Update players object
+        this.players[player.playerID].x = player.x;
+        this.players[player.playerID].y = player.y;
 
-      });
-    // }
-    // catch (error) {
-    //   console.log('Player no longer exist!')
-    // }
-    
+        // Wrap physics world (so you can fall through the ground and end up at the top)
+        this.physics.world.wrap(this.physicsPlayers, 5);
+
+        // Emit player updates to the players
+        io.to(this.roomID).emit('playerUpdates', this.players,this.game.gameTime);
+      }
+    });  
   }
-  
-
 }
 
 
