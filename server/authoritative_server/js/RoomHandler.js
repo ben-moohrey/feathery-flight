@@ -74,11 +74,9 @@ io.on("connection", socket => {
         game.addPlayer(socket,nickname);
      
         // Send updated leaderboard to room
-        io.to(roomID).emit('updateLeaderBoard', game.scene.scenes[0].leaderboard); // game.scene.scene[0].players
-
+        io.to(roomID).emit('updateLeaderBoard', game.scene.scenes[0].leaderboard);
         // Completely done joining
         socket.emit('joinLobbyStatus', roomID, 'join-successful');
-        
     }
 
 

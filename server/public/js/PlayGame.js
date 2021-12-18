@@ -18,15 +18,24 @@ class PlayGame extends Phaser.Scene {
 
     create() {
         console.log('Play Game Scene Begun');
+        this.sound.play('song2'); // start the song
+
+        // Make camera reference
         this.camera = this.cameras.main;
         this.socket = this.game.socket;
 
         var self = this;
+
+        // Create players object
         this.players = this.add.group();
         this.tubes = this.add.group();
-        this.sound.play('song2');
+
+
+        // Font styles
         const style = { font: "bold 100px Arial", fill: "#fff" };
         const style2 = { font: "bold 60px Arial", fill: "#fff" };
+
+        // Timers
         this.preGameTimerText = this.add.text(self.game.canvas.width/2,self.game.canvas.height/2,'',style).setOrigin(.5,.5);
         this.gameTimeText = this.add.text(self.game.canvas.width/2,100,'',style).setOrigin(.5,.5);
         this.gameTimeText.visible = false;
@@ -112,6 +121,7 @@ class PlayGame extends Phaser.Scene {
             this.socket.off('gameOver');
             this.socket.off('countdown');
             
+            // Start leaderboard scene
             self.game.winners = winners;
             self.scene.start('leaderBoard');
             self.scene.stop();
@@ -161,10 +171,13 @@ class PlayGame extends Phaser.Scene {
     displayPlayers(self, playerInfo, sprite, visible) {
         const player = self.add.sprite(playerInfo.x, playerInfo.y, sprite).setOrigin(0.5, 0.5).setDisplaySize(53, 40);
         if (!visible) {
+            // Other player
             player.alpha = 0.2;
         }
         else {
+            // Player
             self.userPlayer = player;
+            player.depth = 15;
             self.camera.startFollow(player);
         }
         player.playerID = playerInfo.playerID;
